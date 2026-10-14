@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Proposer ou corriger une espèce
+    url: https://github.com/aquasmanager/catalogue/issues/new?template=espece.yml
+    about: Le catalogue commun d'espèces a son propre dépôt.
+  - name: Documentation
+    url: https://aquasmanager.fr/docs/
+    about: Installation, guides et FAQ.

@@ -1,0 +1,22 @@
+// Variables Quasar : couleurs, typographie et arrondis de l'application
+
+// Thème « Océan » (comme le site aquasmanager.fr) : bleu ciel,
+// turquoise, corail ; fonds marine profond en mode sombre (voir app.scss)
+$primary: #0284c7;
+$secondary: #0d9488;
+$accent: #e11d48;
+
+$dark: #0b1420;
+$dark-page: #050a12;
+
+$positive: #16a34a;
+$negative: #e11d48;
+$info: #0ea5e9;
+$warning: #d97706;
+
+$typography-font-family: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+// Charte commune : coins arrondis identiques pour champs, boutons et menus
+// (les cartes et fenêtres, un peu plus arrondies, sont réglées dans app.scss).
+$generic-border-radius: 8px;
+$button-border-radius: 8px;

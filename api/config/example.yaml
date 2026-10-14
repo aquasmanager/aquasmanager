@@ -1,0 +1,71 @@
+# Exemple de configuration de l'API AquasManager.
+#
+# Copier ce fichier en config/<ENV>.yaml (ENV=prod → config/prod.yaml) ou le
+# désigner avec AQUAS_CONFIG_FILE. Tout réglage peut aussi venir d'une variable
+# d'environnement AQUAS_* (niveaux séparés par « __ »), qui l'emporte sur ce
+# fichier : c'est là que vont les secrets, jamais ici.
+#   AQUAS_SECRET_KEY, AQUAS_DEFAULT_ADMIN_PASSWORD, AQUAS_MQTT__PASSWORD,
+#   AQUAS_ESP__PASSWORD, AQUAS_SMTP__PASSWORD, AQUAS_TELEGRAM__BOT_TOKEN
+#
+# L'installation Docker (deploy/install.sh) n'a pas besoin de ce fichier : elle
+# passe tout par deploy/.env.
+
+env: "prod"
+debug: false
+log_level: "INFO"
+log_day_retention: 30
+backup_retention_days: 5
+
+# Historique des relevés de capteurs conservé (jours, 0 = sans limite)
+sensor_reading_retention_days: 365
+
+# Fuseau horaire de l'installation et heure d'envoi du rappel des tâches du jour
+timezone: "Europe/Paris"
+task_reminder_hour: 8
+
+# Compte admin créé au tout premier démarrage (base vide). Son mot de passe
+# (AQUAS_DEFAULT_ADMIN_PASSWORD) doit être changé à la première connexion.
+default_admin_username: "admin"
+
+# Adresses de l'interface autorisées à appeler l'API (CORS)
+frontend_urls:
+  - "https://aquarium.example.org"
+
+database:
+  type: "sqlite"
+  sqlite_path: "./base/AquasManager.db"
+
+# Broker MQTT partagé avec les contrôleurs ESP32
+mqtt:
+  host: "192.168.1.10"
+  port: 1883
+  timeout: 60
+  user: "aquasmanager"
+  topic_prefix: "aquarium"
+  # Adresse du broker vue par les contrôleurs, si différente de host
+  device_host: ""
+
+# Wi-Fi écrit dans le firmware des contrôleurs
+esp:
+  ssid: "MonWifi"
+
+# Réseau des contrôleurs (adresses fixes attribuées dans cette plage)
+network:
+  gateway: 192.168.1.1
+  subnet: 255.255.255.0
+  dns1: 192.168.1.1
+  start: 192.168.1.50
+  end: 192.168.1.99
+
+smtp:
+  enabled: false
+  host: "smtp.example.org"
+  port: 587
+  use_tls: true
+  user: ""
+  from_addr: ""
+  to_addr: ""
+
+telegram:
+  enabled: false
+  chat_id: ""

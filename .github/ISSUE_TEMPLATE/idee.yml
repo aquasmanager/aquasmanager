@@ -1,0 +1,21 @@
+name: Idée
+description: Proposer une fonctionnalité ou une amélioration / Suggest a feature or an improvement
+title: "[Idée] "
+labels: ["fonctionnalité"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sans compte GitHub, vous pouvez aussi proposer une idée depuis l'application : menu utilisateur → « Proposer une idée ».
+  - type: textarea
+    id: need
+    attributes:
+      label: Le besoin
+      description: Ce que vous voudriez faire, et pourquoi c'est utile
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Une solution possible (facultatif)
+      description: Dans quelle page, comment vous l'imaginez

@@ -1,0 +1,38 @@
+// Journal de bord par aquarium
+export default {
+  title: 'Journal de bord',
+  subtitle: 'Notes datées, aussi affichées sur les courbes des paramètres (tableau de bord)',
+  add: 'Noter',
+  when: 'Date et heure',
+  category: 'Catégorie',
+  text: 'Note',
+  item: 'cette note',
+  auto: 'automatique',
+  allCategories: 'Tout afficher',
+  emptyTitle: 'Journal vide',
+  emptyMessage: 'Note ce qui se passe dans le bac (changement d’eau, dosage, observation) : tu pourras relier une variation des paramètres à sa cause.',
+  noMatch: 'Aucune note dans ces catégories',
+  editTitle: 'Modifier la note',
+  loadFailed: "Le journal n'a pas pu être chargé.",
+  saveFailed: "La note n'a pas pu être enregistrée.",
+  categories: {
+    note: 'Note',
+    water_change: "Changement d'eau",
+    dosing: 'Dosage',
+    livestock: 'Vivant',
+    maintenance: 'Entretien',
+    problem: 'Problème',
+  },
+  placeholders: {
+    note: 'Ex. : coraux bien ouverts, polypes sortis',
+    water_change: 'Ex. : changement d’eau 10 % (45 L)',
+    dosing: 'Ex. : KH+ passé à 20 mL par jour',
+    livestock: 'Ex. : ajout de 2 boutures d’Acropora',
+    maintenance: 'Ex. : nettoyage de l’écumeur',
+    problem: 'Ex. : cyanobactéries sur le sable',
+  },
+  chart: {
+    show: 'Journal',
+    tooltip: 'Afficher les notes du journal sur la courbe',
+  },
+};

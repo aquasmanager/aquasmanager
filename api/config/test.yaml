@@ -1,0 +1,23 @@
+# Configuration des tests automatiques (pytest, CI). Aucune donnée réelle :
+# base SQLite jetable, aucun broker MQTT contacté (le cycle de vie de
+# l'application, qui ouvre la connexion MQTT, n'est pas démarré en test).
+app_name: "AquasPy"
+env: "test"
+debug: false
+log_level: "WARNING"
+secret_key: "cle-de-test-uniquement-pour-pytest-0123456789"
+default_admin_username: "admin"
+default_admin_password: "ChangeMe123!"
+frontend_urls:
+  - "http://localhost:9000"
+# Pas de catalogue en ligne pendant les tests (synchronisation testée à part)
+hub_url: "none"
+database:
+  type: "sqlite"
+  sqlite_path: "/tmp/aquasmanager-tests.db"
+mqtt:
+  host: "127.0.0.1"
+  port: 1883
+  user: "test"
+  password: "test"
+  topic_prefix: "aquarium-test"

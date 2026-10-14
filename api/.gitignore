@@ -1,0 +1,27 @@
+venv/*
+.idea/*
+.tox/*
+.vscode
+*pyc
+*__pycache_*
+build/
+dist/
+.coverage
+old/
+tests/.benchmarks/
+tests/.pytest_cache/*
+.pytest_cache/*
+*.log
+logs/*
+uploads/*
+base/*
+.env
+*.pyc
+/aquarium.db
+# Configs ESPHome générées (identifiants réels)
+/esp_configs/*
+!/esp_configs/.gitignore
+# Configs locales : seules example.yaml et test.yaml sont suivies (prod/recette : ConfigMaps gitops)
+/config/*.yaml
+!/config/example.yaml
+!/config/test.yaml

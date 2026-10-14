@@ -1,0 +1,9 @@
+venv
+.git
+.env
+base
+uploads
+logs
+esp_configs
+**/__pycache__
+*.db

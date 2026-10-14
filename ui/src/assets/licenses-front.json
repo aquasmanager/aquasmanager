@@ -1,0 +1,566 @@
+[
+ {
+  "name": "@babel/helper-string-parser",
+  "version": "7.29.7",
+  "license": "MIT",
+  "url": "https://babel.dev/docs/en/next/babel-helper-string-parser"
+ },
+ {
+  "name": "@babel/helper-validator-identifier",
+  "version": "7.29.7",
+  "license": "MIT",
+  "url": "https://github.com/babel/babel"
+ },
+ {
+  "name": "@babel/parser",
+  "version": "7.29.8",
+  "license": "MIT",
+  "url": "https://babel.dev/docs/en/next/babel-parser"
+ },
+ {
+  "name": "@babel/types",
+  "version": "7.29.8",
+  "license": "MIT",
+  "url": "https://babel.dev/docs/en/next/babel-types"
+ },
+ {
+  "name": "@fontsource-variable/geist",
+  "version": "5.3.0",
+  "license": "OFL-1.1",
+  "url": "https://fontsource.org/fonts/geist"
+ },
+ {
+  "name": "@fontsource-variable/geist-mono",
+  "version": "5.3.0",
+  "license": "OFL-1.1",
+  "url": "https://fontsource.org/fonts/geist-mono"
+ },
+ {
+  "name": "@intlify/core-base",
+  "version": "11.4.10",
+  "license": "MIT",
+  "url": "https://github.com/intlify/vue-i18n/tree/master/packages/core-base#readme"
+ },
+ {
+  "name": "@intlify/devtools-types",
+  "version": "11.4.10",
+  "license": "MIT",
+  "url": "https://github.com/intlify/vue-i18n/tree/master/packages/devtools-types#readme"
+ },
+ {
+  "name": "@intlify/message-compiler",
+  "version": "11.4.10",
+  "license": "MIT",
+  "url": "https://github.com/intlify/vue-i18n/tree/master/packages/message-compiler#readme"
+ },
+ {
+  "name": "@intlify/shared",
+  "version": "11.4.10",
+  "license": "MIT",
+  "url": "https://github.com/intlify/vue-i18n/tree/master/packages/shared#readme"
+ },
+ {
+  "name": "@jridgewell/sourcemap-codec",
+  "version": "1.6.0",
+  "license": "MIT",
+  "url": "https://github.com/jridgewell/sourcemaps/tree/main/packages/sourcemap-codec"
+ },
+ {
+  "name": "@quasar/extras",
+  "version": "1.18.0",
+  "license": "MIT",
+  "url": "https://quasar.dev"
+ },
+ {
+  "name": "@vee-validate/rules",
+  "version": "4.15.1",
+  "license": "MIT",
+  "url": "https://vee-validate.logaretm.com/v4/guide/global-validators"
+ },
+ {
+  "name": "@vee-validate/zod",
+  "version": "4.15.1",
+  "license": "MIT",
+  "url": "https://vee-validate.logaretm.com/v4/integrations/zod-schema-validation/"
+ },
+ {
+  "name": "@vue/compiler-core",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/compiler-core#readme"
+ },
+ {
+  "name": "@vue/compiler-dom",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/compiler-dom#readme"
+ },
+ {
+  "name": "@vue/compiler-sfc",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/compiler-sfc#readme"
+ },
+ {
+  "name": "@vue/compiler-ssr",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/compiler-ssr#readme"
+ },
+ {
+  "name": "@vue/devtools-api",
+  "version": "6.6.4",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/vue-devtools"
+ },
+ {
+  "name": "@vue/devtools-api",
+  "version": "7.7.10",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/devtools"
+ },
+ {
+  "name": "@vue/devtools-kit",
+  "version": "7.7.10",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/devtools"
+ },
+ {
+  "name": "@vue/devtools-shared",
+  "version": "7.7.10",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/devtools"
+ },
+ {
+  "name": "@vue/reactivity",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/reactivity#readme"
+ },
+ {
+  "name": "@vue/runtime-core",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/runtime-core#readme"
+ },
+ {
+  "name": "@vue/runtime-dom",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/runtime-dom#readme"
+ },
+ {
+  "name": "@vue/server-renderer",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/server-renderer#readme"
+ },
+ {
+  "name": "@vue/shared",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://github.com/vuejs/core/tree/main/packages/shared#readme"
+ },
+ {
+  "name": "agent-base",
+  "version": "6.0.2",
+  "license": "MIT",
+  "url": "https://github.com/TooTallNate/node-agent-base"
+ },
+ {
+  "name": "argparse",
+  "version": "2.0.1",
+  "license": "Python-2.0",
+  "url": "nodeca/argparse"
+ },
+ {
+  "name": "asynckit",
+  "version": "0.4.0",
+  "license": "MIT",
+  "url": "https://github.com/alexindigo/asynckit#readme"
+ },
+ {
+  "name": "axios",
+  "version": "1.20.0",
+  "license": "MIT",
+  "url": "https://axios-http.com"
+ },
+ {
+  "name": "birpc",
+  "version": "2.9.0",
+  "license": "MIT",
+  "url": "https://github.com/antfu-collective/birpc#readme"
+ },
+ {
+  "name": "call-bind-apply-helpers",
+  "version": "1.0.2",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/call-bind-apply-helpers#readme"
+ },
+ {
+  "name": "chartjs-adapter-date-fns",
+  "version": "3.0.0",
+  "license": "MIT",
+  "url": "https://www.chartjs.org"
+ },
+ {
+  "name": "combined-stream",
+  "version": "1.0.8",
+  "license": "MIT",
+  "url": "https://github.com/felixge/node-combined-stream"
+ },
+ {
+  "name": "copy-anything",
+  "version": "4.1.0",
+  "license": "MIT",
+  "url": "https://github.com/mesqueeb/copy-anything#readme"
+ },
+ {
+  "name": "csstype",
+  "version": "3.2.3",
+  "license": "MIT",
+  "url": "https://github.com/frenic/csstype"
+ },
+ {
+  "name": "date-fns",
+  "version": "4.4.0",
+  "license": "MIT",
+  "url": "https://github.com/date-fns/date-fns"
+ },
+ {
+  "name": "debug",
+  "version": "4.4.3",
+  "license": "MIT",
+  "url": "https://github.com/debug-js/debug"
+ },
+ {
+  "name": "defu",
+  "version": "6.1.7",
+  "license": "MIT",
+  "url": "unjs/defu"
+ },
+ {
+  "name": "delayed-stream",
+  "version": "1.0.0",
+  "license": "MIT",
+  "url": "https://github.com/felixge/node-delayed-stream"
+ },
+ {
+  "name": "dunder-proto",
+  "version": "1.0.1",
+  "license": "MIT",
+  "url": "https://github.com/es-shims/dunder-proto#readme"
+ },
+ {
+  "name": "echarts",
+  "version": "6.1.0",
+  "license": "Apache-2.0",
+  "url": "https://echarts.apache.org"
+ },
+ {
+  "name": "entities",
+  "version": "7.0.1",
+  "license": "BSD-2-Clause",
+  "url": "https://github.com/fb55/entities"
+ },
+ {
+  "name": "es-define-property",
+  "version": "1.0.1",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/es-define-property#readme"
+ },
+ {
+  "name": "es-errors",
+  "version": "1.3.0",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/es-errors#readme"
+ },
+ {
+  "name": "es-object-atoms",
+  "version": "1.1.2",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/es-object-atoms#readme"
+ },
+ {
+  "name": "es-set-tostringtag",
+  "version": "2.1.0",
+  "license": "MIT",
+  "url": "https://github.com/es-shims/es-set-tostringtag#readme"
+ },
+ {
+  "name": "estree-walker",
+  "version": "2.0.2",
+  "license": "MIT",
+  "url": "https://github.com/Rich-Harris/estree-walker"
+ },
+ {
+  "name": "follow-redirects",
+  "version": "1.16.0",
+  "license": "MIT",
+  "url": "https://github.com/follow-redirects/follow-redirects"
+ },
+ {
+  "name": "form-data",
+  "version": "4.0.6",
+  "license": "MIT",
+  "url": "https://github.com/form-data/form-data"
+ },
+ {
+  "name": "function-bind",
+  "version": "1.1.2",
+  "license": "MIT",
+  "url": "https://github.com/Raynos/function-bind"
+ },
+ {
+  "name": "get-intrinsic",
+  "version": "1.3.0",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/get-intrinsic#readme"
+ },
+ {
+  "name": "get-proto",
+  "version": "1.0.1",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/get-proto#readme"
+ },
+ {
+  "name": "gopd",
+  "version": "1.2.0",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/gopd#readme"
+ },
+ {
+  "name": "has-symbols",
+  "version": "1.1.0",
+  "license": "MIT",
+  "url": "https://github.com/ljharb/has-symbols#readme"
+ },
+ {
+  "name": "has-tostringtag",
+  "version": "1.0.2",
+  "license": "MIT",
+  "url": "https://github.com/inspect-js/has-tostringtag#readme"
+ },
+ {
+  "name": "hasown",
+  "version": "2.0.4",
+  "license": "MIT",
+  "url": "https://github.com/inspect-js/hasOwn#readme"
+ },
+ {
+  "name": "highlight.js",
+  "version": "11.12.0",
+  "license": "BSD-3-Clause",
+  "url": "https://highlightjs.org/"
+ },
+ {
+  "name": "hookable",
+  "version": "5.5.3",
+  "license": "MIT",
+  "url": "unjs/hookable"
+ },
+ {
+  "name": "https-proxy-agent",
+  "version": "5.0.1",
+  "license": "MIT",
+  "url": "https://github.com/TooTallNate/node-https-proxy-agent"
+ },
+ {
+  "name": "js-yaml",
+  "version": "5.4.1",
+  "license": "MIT",
+  "url": "nodeca/js-yaml"
+ },
+ {
+  "name": "jwt-decode",
+  "version": "4.0.0",
+  "license": "MIT",
+  "url": "https://github.com/auth0/jwt-decode#readme"
+ },
+ {
+  "name": "magic-string",
+  "version": "0.30.21",
+  "license": "MIT",
+  "url": "https://github.com/Rich-Harris/magic-string"
+ },
+ {
+  "name": "math-intrinsics",
+  "version": "1.1.0",
+  "license": "MIT",
+  "url": "https://github.com/es-shims/math-intrinsics#readme"
+ },
+ {
+  "name": "mime-db",
+  "version": "1.52.0",
+  "license": "MIT",
+  "url": "jshttp/mime-db"
+ },
+ {
+  "name": "mime-types",
+  "version": "2.1.35",
+  "license": "MIT",
+  "url": "jshttp/mime-types"
+ },
+ {
+  "name": "mitt",
+  "version": "3.0.1",
+  "license": "MIT",
+  "url": "https://github.com/developit/mitt"
+ },
+ {
+  "name": "ms",
+  "version": "2.1.3",
+  "license": "MIT",
+  "url": "vercel/ms"
+ },
+ {
+  "name": "nanoid",
+  "version": "3.3.18",
+  "license": "MIT",
+  "url": "ai/nanoid"
+ },
+ {
+  "name": "pdfjs-dist",
+  "version": "6.3.289",
+  "license": "Apache-2.0",
+  "url": "https://mozilla.github.io/pdf.js/"
+ },
+ {
+  "name": "perfect-debounce",
+  "version": "1.0.0",
+  "license": "MIT",
+  "url": "unjs/perfect-debounce"
+ },
+ {
+  "name": "picocolors",
+  "version": "1.1.1",
+  "license": "ISC",
+  "url": "alexeyraspopov/picocolors"
+ },
+ {
+  "name": "pinia",
+  "version": "3.0.4",
+  "license": "MIT",
+  "url": "https://pinia.vuejs.org"
+ },
+ {
+  "name": "pinia-plugin-persistedstate",
+  "version": "4.7.1",
+  "license": "MIT",
+  "url": "https://praz.codeberg.page/pinia-plugin-persistedstate"
+ },
+ {
+  "name": "postcss",
+  "version": "8.5.26",
+  "license": "MIT",
+  "url": "https://postcss.org/"
+ },
+ {
+  "name": "prismjs",
+  "version": "1.30.0",
+  "license": "MIT",
+  "url": "https://github.com/PrismJS/prism"
+ },
+ {
+  "name": "proxy-from-env",
+  "version": "2.1.0",
+  "license": "MIT",
+  "url": "https://github.com/Rob--W/proxy-from-env#readme"
+ },
+ {
+  "name": "quasar",
+  "version": "2.27.0",
+  "license": "MIT",
+  "url": "https://quasar.dev"
+ },
+ {
+  "name": "rfdc",
+  "version": "1.4.1",
+  "license": "MIT",
+  "url": "https://github.com/davidmarkclements/rfdc#readme"
+ },
+ {
+  "name": "sortablejs",
+  "version": "1.15.7",
+  "license": "MIT",
+  "url": "https://github.com/SortableJS/Sortable"
+ },
+ {
+  "name": "source-map-js",
+  "version": "1.2.1",
+  "license": "BSD-3-Clause",
+  "url": "https://github.com/7rulnik/source-map-js"
+ },
+ {
+  "name": "speakingurl",
+  "version": "14.0.1",
+  "license": "BSD-3-Clause",
+  "url": "http://pid.github.io/speakingurl/"
+ },
+ {
+  "name": "superjson",
+  "version": "2.2.6",
+  "license": "MIT",
+  "url": "https://github.com/blitz-js/superjson"
+ },
+ {
+  "name": "tslib",
+  "version": "2.3.0",
+  "license": "0BSD",
+  "url": "https://www.typescriptlang.org/"
+ },
+ {
+  "name": "type-fest",
+  "version": "4.41.0",
+  "license": "(MIT OR CC0-1.0)",
+  "url": "sindresorhus/type-fest"
+ },
+ {
+  "name": "vee-validate",
+  "version": "4.15.1",
+  "license": "MIT",
+  "url": "https://vee-validate.logaretm.com/"
+ },
+ {
+  "name": "vue",
+  "version": "3.5.42",
+  "license": "MIT",
+  "url": "https://vuejs.org/"
+ },
+ {
+  "name": "vue-chartjs",
+  "version": "5.3.4",
+  "license": "MIT",
+  "url": "http://vue-chartjs.org"
+ },
+ {
+  "name": "vue-echarts",
+  "version": "8.3.0",
+  "license": "MIT",
+  "url": "https://github.com/ecomfe/vue-echarts"
+ },
+ {
+  "name": "vue-i18n",
+  "version": "11.4.10",
+  "license": "MIT",
+  "url": "https://github.com/intlify/vue-i18n/tree/master/packages/vue-i18n#readme"
+ },
+ {
+  "name": "vue-router",
+  "version": "4.6.4",
+  "license": "MIT",
+  "url": "https://router.vuejs.org"
+ },
+ {
+  "name": "zod",
+  "version": "3.25.76",
+  "license": "MIT",
+  "url": "https://zod.dev"
+ },
+ {
+  "name": "zrender",
+  "version": "6.1.0",
+  "license": "BSD-3-Clause",
+  "url": "https://github.com/ecomfe/zrender"
+ }
+]

@@ -1,0 +1,47 @@
+import type fr from '../fr/stock';
+
+// Consumables stock
+const stock: typeof fr = {
+  title: 'Stock',
+  subtitle: 'Consumables (salt, resin, KH+...) with an alert threshold',
+  add: 'Add an item',
+  search: 'Search (salt, resin...)',
+  lowFilter: 'Low stock ({n})',
+  low: 'Low stock',
+  emptyTitle: 'No tracked item',
+  emptyMessage: 'Add an item (salt, resin, KH+...) to track stock and know when to buy more.',
+  noResult: 'No result for “{search}”',
+  noLow: 'No item low on stock',
+  threshold: 'Alert threshold: {value}',
+  openedOn: 'Opened on',
+  openedToday: 'Opened today',
+  openedSince: 'Opened on {date} (today) | Opened on {date} ({n} day ago) | Opened on {date} ({n} days ago)',
+  history: 'History',
+  movement: 'Movement',
+  editTitle: 'Edit the item',
+  formSubtitle: 'An alert is raised when the quantity drops below the threshold',
+  name: 'Name (e.g. salt, resin, KH+) *',
+  unit: 'Unit (e.g. kg, L, bag) *',
+  initialQuantity: 'Initial quantity',
+  thresholdLabel: 'Alert threshold',
+  sharedHelp: 'A single shared stock: a movement recorded from any tank concerned updates it.',
+  movementTitle: 'Stock movement',
+  validate: 'Confirm',
+  restock: 'Restock (+)',
+  consumption: 'Usage (−)',
+  quantity: 'Quantity ({unit}) *',
+  note: 'Note',
+  noMovement: 'No movement yet',
+  notify: {
+    nameUnitRequired: 'The name and the unit are required.',
+    aquariumRequired: 'Pick at least one aquarium.',
+    saveFailed: 'Failed to save the item.',
+    positive: 'Enter a positive quantity.',
+    movementFailed: 'Failed to save the movement.',
+  },
+  item: 'the item {name}',
+  deleteMessage: 'Delete the item {name} and its movement history?',
+  deleteShared: ' It is shared: it will disappear from all the aquariums concerned.',
+};
+
+export default stock;

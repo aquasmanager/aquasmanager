@@ -1,0 +1,191 @@
+import shared from './shared';
+import home from './home';
+import aquariums from './aquariums';
+import dashboard from './dashboard';
+import params from './params';
+import equipments from './equipments';
+import sensors from './sensors';
+import rules from './rules';
+import lights from './lights';
+import cameras from './cameras';
+import frags from './frags';
+import documents from './documents';
+import groupOrders from './groupOrders';
+import journal from './journal';
+import waterChanges from './waterChanges';
+import dosing from './dosing';
+import transfers from 'src/pro/i18n/fr/transfers';
+import stock from './stock';
+import tasks from './tasks';
+import livestock from './livestock';
+import admin from './admin';
+import backup from './backup';
+import users from './users';
+import controllers from './controllers';
+
+// Textes de l'interface en français : langue de référence (les clés anglaises
+// sont vérifiées par rapport à ce fichier). Tutoiement, comme dans toute l'appli.
+export default {
+  ...shared,
+  home,
+  aquariums,
+  dashboard,
+  params,
+  equipments,
+  sensors,
+  rules,
+  lights,
+  ...cameras,
+  frags,
+  documents,
+  groupOrders,
+  journal,
+  waterChanges,
+  dosing,
+  transfers,
+  stock,
+  tasks,
+  livestock,
+  ...admin,
+  backup,
+  users,
+  controllers,
+  common: {
+    save: 'Enregistrer',
+    cancel: 'Annuler',
+    close: 'Fermer',
+    back: 'Retour',
+    retry: 'Réessayer',
+    never: 'Jamais',
+    language: 'Langue',
+  },
+  nav: {
+    home: 'Accueil',
+    myAquariums: 'Mes aquariums',
+    aquariums: 'Aquariums',
+    aquarium: 'Aquarium',
+    calendar: 'Calendrier',
+    frags: 'Boutures',
+    transfers: 'Cessions',
+    documents: "Documents d'achat",
+    groupOrders: 'Commandes groupées',
+    settings: 'Configuration',
+    controllers: 'Contrôleurs',
+    species: "Catalogue d'espèces",
+    users: 'Utilisateurs',
+    notifications: 'Notifications',
+    assistant: 'Assistant IA',
+    backup: 'Sauvegarde',
+    license: 'Licence',
+    audit: "Journal d'activité",
+    licences: 'Licences et avertissement',
+    apiDocs: "Documentation de l'API",
+    menu: 'Menu',
+  },
+  roles: {
+    consult: 'Consultation seule',
+    seller: 'Bourse (boutures uniquement)',
+    caretaker: 'Gardiennage (tâches et relevés)',
+    user: 'Utilisateur',
+    manager: 'Manager',
+    admin: 'Administrateur',
+  },
+  feature: {
+    action: 'Proposer une idée',
+    title: 'Proposer une idée pour AquasManager',
+    intro: "Une fonctionnalité qui te manque, une amélioration ? Elle sera lue et discutée publiquement avant d'être éventuellement développée.",
+    name: 'Ton idée en une phrase',
+    description: 'Description',
+    descriptionHint: "Ce que tu voudrais faire, dans quelle page, et pourquoi c'est utile",
+    public: "L'idée est publique (suivi d'AquasManager) : ni ton adresse ni tes données ne sont envoyées.",
+    sent: 'Idée envoyée, merci !',
+    tooShort: 'Donne un titre (5 caractères au moins) et une description (10 caractères au moins).',
+  },
+  layout: {
+    back: 'Retour',
+    menu: 'Menu',
+    sync: 'Synchronisation',
+    online: 'Connecté',
+    offline: 'Hors connexion',
+    pending: "{n} enregistrement en attente d'envoi | {n} enregistrements en attente d'envoi",
+    nothingPending: 'Rien en attente',
+    ignore: 'Ignorer',
+    sendNow: 'Envoyer maintenant',
+    assistant: 'Assistant',
+    themeAuto: 'Thème automatique (réglage du système)',
+    themeLight: 'Thème clair',
+    themeDark: 'Thème sombre',
+    pushTitle: 'Notifications sur cet appareil',
+    pushNeedsInstall: "Installe d'abord l'appli sur l'écran d'accueil",
+    pushBlocked: 'Bloquées dans les réglages du navigateur',
+    pushTest: 'Envoyer un test',
+    install: "Installer l'application",
+    changePassword: 'Changer mon mot de passe',
+    logout: 'Se déconnecter',
+    version: 'Version {version}',
+    updateAvailable: 'Nouvelle version disponible',
+    checkUpdates: 'Vérifier les mises à jour',
+    updateBar: "Une nouvelle version d'AquasManager est disponible.",
+    demoBar: 'Démo : données fictives, remises à zéro chaque nuit.',
+    demoInstall: 'Installer AquasManager',
+    update: 'Mettre à jour',
+    offlineBar: "Hors connexion : dernières données enregistrées sur l'appareil ; le pilotage des équipements est indisponible.",
+    faultReset: 'Réinitialiser',
+    faultDismiss: 'Masquer',
+    flashInProgress: 'Mise à jour des contrôleurs en cours',
+    flashRequired: 'Mise à jour des contrôleurs requise',
+    flashConfigChanged: "La configuration a changé : reflashe pour l'appliquer.",
+    flash: 'Flasher',
+    controllerOffline: 'Contrôleur hors ligne',
+    otherControllers: '+ {n} autre contrôleur | + {n} autres contrôleurs',
+    flashAll: 'Tout flasher',
+    seeControllers: 'Voir les contrôleurs',
+    chatTitle: 'Assistant AquasManager',
+    chatPlaceholder: 'Pose une question…',
+    notifyUpdateAvailable: "Nouvelle version disponible : touche « Mettre à jour » en haut de l'écran.",
+    notifyUpToDate: 'AquasManager est à jour (version {version}).',
+    pushDenied: 'Notifications refusées : autorise-les pour ce site dans les réglages du navigateur.',
+    pushUnavailable: 'Activation impossible sur cet appareil (service de notifications indisponible).',
+    pushTestSent: 'Notification de test envoyée ({n} appareil). | Notification de test envoyée ({n} appareils).',
+    pushTestFailed: "Échec de l'envoi du test.",
+    faultAckFailed: "Échec de l'acquittement.",
+    faultResetSent: 'Demande de réinitialisation envoyée.',
+    faultResetFailed: 'Échec de la réinitialisation.',
+  },
+  auth: {
+    subtitle: 'Connecte-toi pour gérer tes aquariums',
+    username: "Nom d'utilisateur",
+    password: 'Mot de passe',
+    remember: 'Se souvenir de moi',
+    login: 'Se connecter',
+    usernameRequired: "Nom d'utilisateur requis",
+    passwordRequired: 'Mot de passe requis',
+    unknownError: 'Erreur inconnue',
+    serverUnreachable: 'Impossible de contacter le serveur.',
+    userCreated: 'Utilisateur « {name} » créé avec succès.',
+    demoTitle: 'Démo en libre accès',
+    demoCredentials: 'Identifiant {username}, mot de passe {password} (déjà saisis).',
+    demoHint: "Données fictives, sans vrai aquarium derrière : essaie tout, c'est remis à zéro chaque nuit.",
+  },
+  password: {
+    forcedTitle: 'Nouveau mot de passe requis',
+    title: 'Changer mon mot de passe',
+    forcedHint: 'Pour des raisons de sécurité, définis un nouveau mot de passe avant de continuer.',
+    hint: "8 caractères minimum, différent de l'actuel.",
+    current: 'Mot de passe actuel',
+    new: 'Nouveau mot de passe',
+    confirm: 'Confirmer le nouveau mot de passe',
+    submit: 'Mettre à jour le mot de passe',
+    tooShort: 'Mot de passe trop court (8 caractères minimum)',
+    confirmRequired: 'Confirme le mot de passe',
+    mismatch: 'Les mots de passe ne correspondent pas',
+    mustDiffer: "Le nouveau mot de passe doit être différent de l'actuel",
+    updated: 'Mot de passe mis à jour avec succès.',
+    failed: 'Impossible de changer le mot de passe.',
+  },
+  errors: {
+    notFound: "Cette page n'existe pas.",
+    forbidden: "Tu n'as pas les droits pour accéder à cette page.",
+    backHome: "Retour à l'accueil",
+  },
+};

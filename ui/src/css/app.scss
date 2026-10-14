@@ -1,0 +1,333 @@
+// Charte graphique d'AquasManager, commune à toutes les pages.
+//
+// Thème « Océan », repris du site aquasmanager.fr : police Geist,
+// bleu ciel / turquoise / corail, cartes à bordure fine ; en mode sombre,
+// fond marine profond avec halos et cartes translucides.
+//
+// - Fond de page clair, contenu posé sur des cartes (q-card flat bordered)
+//   arrondies à 14 px.
+// - Champs : outlined + dense, libellé flottant (label="...").
+// - Boutons : texte en casse normale ; action principale = unelevated
+//   primary, secondaire = outline ou flat ; icône seule = flat round dense.
+// - En-têtes : composant PageHeader, états vides : EmptyState, fenêtres de
+//   saisie : FormDialog (voir src/components).
+
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+:root {
+  --app-page-bg: #f6f9fc;
+  --app-card-bg: #ffffff;
+  --app-card-radius: 14px;
+  --app-border-color: rgba(2, 32, 71, 0.1);
+  --app-code-bg: #f6f9fc;
+  --app-ink: #0b1220;
+  --app-ink-soft: #475569;
+  --app-ink-faint: #7c8a9e;
+  --app-accent: #0284c7;
+  --app-accent-2: #0d9488;
+  --app-coral: #e11d48;
+  --app-ok: #16a34a;
+  --app-warn: #d97706;
+  --app-header-bg: rgba(255, 255, 255, 0.86);
+  --app-font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', monospace;
+}
+
+body {
+  background: var(--app-page-bg);
+  color: var(--app-ink);
+  font-feature-settings: 'ss01';
+}
+
+// En-tête : bandeau clair (sombre en mode sombre) à bordure fine, comme le site
+.app-header {
+  background: var(--app-header-bg) !important;
+  color: var(--app-ink) !important;
+  border-bottom: 1px solid var(--app-border-color);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+}
+
+.q-header.app-header {
+  box-shadow: none;
+}
+
+// Pastille d'état (« dans la cible », « sonde »...) en police à chasse fixe
+.app-tag {
+  --c: var(--app-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-family: var(--app-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+}
+
+.app-tag--ok { --c: var(--app-ok); }
+.app-tag--warn { --c: var(--app-warn); }
+.app-tag--danger { --c: var(--app-coral); }
+.app-tag--teal { --c: var(--app-accent-2); }
+
+// Chiffres alignés (cibles, relevés) en police à chasse fixe
+.app-mono {
+  font-family: var(--app-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+// Encart d'information (succès, attention, erreur) lisible en clair comme en sombre
+.app-callout {
+  --c: var(--app-accent);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--app-ink);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+}
+
+.app-callout > .q-icon {
+  color: var(--c);
+  flex: none;
+}
+
+.app-callout--ok { --c: var(--app-ok); }
+.app-callout--warn { --c: var(--app-warn); }
+.app-callout--danger { --c: var(--app-coral); }
+
+// Indicateur « En direct » : point qui pulse
+.app-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--app-font-mono);
+  font-size: 11px;
+  color: var(--app-ok);
+  white-space: nowrap;
+}
+
+.app-live::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+  animation: app-pulse 2s ease-in-out infinite;
+}
+
+@keyframes app-pulse {
+  50% { opacity: 0.35; }
+}
+
+// Grande valeur d'une carte de mesure
+.app-value {
+  font-size: 2.4rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-ink);
+}
+
+.app-value-unit {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-ink-faint);
+  margin-left: 4px;
+}
+
+// Libellés de boutons et d'onglets en casse normale (Quasar les met en majuscules par défaut)
+.q-btn,
+.q-tab {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.q-card {
+  border-radius: var(--app-card-radius);
+}
+
+.q-card--flat.q-card--bordered {
+  background: var(--app-card-bg);
+}
+
+.q-card--bordered {
+  border-color: var(--app-border-color);
+}
+
+.q-dialog .q-card {
+  border-radius: 14px;
+}
+
+// Largeur et marges communes des pages de premier niveau
+.app-page {
+  padding: 16px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+@media (min-width: $breakpoint-sm-min) {
+  .app-page {
+    padding: 24px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Téléphone : comportement d'appli (pas de surlignage au toucher, pas de
+// rebond de page, place pour le bouton de l'assistant en bas de page).
+// ---------------------------------------------------------------------------
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+.q-header,
+.q-footer,
+.q-drawer {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: $breakpoint-sm-max) {
+  .app-page {
+    padding: 12px 12px 24px;
+  }
+}
+
+// Téléphone : champs de recherche des pages sur toute la largeur
+@media (max-width: $breakpoint-xs-max) {
+  .app-search {
+    width: 100% !important;
+    flex: 1 1 100%;
+  }
+}
+
+// Pas d'effet de survol sur écran tactile (il resterait « collé » après un toucher)
+@media (hover: none) {
+  .hover-card:hover {
+    box-shadow: none;
+  }
+}
+
+// Carte cliquable (aquariums, vivants, contrôleurs...)
+.hover-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.hover-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+// Tableaux posés dans une carte : pas de double bordure
+.app-table.q-table__card {
+  box-shadow: none;
+}
+
+.app-table .q-table thead th {
+  font-weight: 600;
+  color: $grey-8;
+}
+
+.font-mono {
+  font-family: var(--app-font-mono);
+}
+
+.gap-xs { gap: 4px; }
+.gap-sm { gap: 8px; }
+.gap-md { gap: 16px; }
+
+.controller-card {
+  border-left-width: 4px !important;
+}
+
+.status-border-teal { border-left-color: #009688 !important; }
+.status-border-red { border-left-color: #f44336 !important; }
+.status-border-blue { border-left-color: #2196f3 !important; }
+.status-border-deep-orange { border-left-color: #ff5722 !important; }
+.status-border-negative { border-left-color: $negative !important; }
+
+// ---------------------------------------------------------------------------
+// Mode sombre (menu utilisateur : automatique / clair / sombre). Les composants
+// Quasar passent seuls en sombre ; on adapte ici les classes utilitaires
+// claires utilisées dans les pages (fonds pastel, textes gris foncés).
+// ---------------------------------------------------------------------------
+body.body--dark {
+  --app-page-bg: #050a12;
+  --app-card-bg: rgba(148, 197, 255, 0.035);
+  --app-border-color: rgba(148, 197, 255, 0.12);
+  --app-code-bg: #08101b;
+  --app-ink: #f1f5f9;
+  --app-ink-soft: #94a3b8;
+  --app-ink-faint: #64748b;
+  --app-accent: #38bdf8;
+  --app-accent-2: #2dd4bf;
+  --app-coral: #fb7185;
+  --app-ok: #4ade80;
+  --app-warn: #fbbf24;
+  --app-header-bg: rgba(10, 17, 28, 0.82);
+
+  // Fond marine avec halos bleu ciel / turquoise (fixe : ne défile pas)
+  background:
+    radial-gradient(60rem 40rem at 10% -10%, rgba(14, 165, 233, 0.16), transparent 60%),
+    radial-gradient(50rem 36rem at 100% 0%, rgba(45, 212, 191, 0.1), transparent 60%),
+    #050a12 fixed;
+
+  // Textes et icônes « primary » plus lumineux sur fond sombre (les fonds gardent le bleu soutenu)
+  .text-primary { color: #38bdf8 !important; }
+  .text-secondary { color: #2dd4bf !important; }
+  .q-card--dark,
+  .q-dialog .q-card,
+  .q-menu {
+    background: #0b1420;
+  }
+  .q-card--flat.q-card--bordered {
+    background: var(--app-card-bg);
+    backdrop-filter: blur(6px);
+  }
+
+  .bg-white { background: #1d2127 !important; }
+  .bg-grey-1 { background: #1c2026 !important; }
+  .bg-grey-2 { background: #262a31 !important; }
+  .bg-grey-3 { background: #30353d !important; }
+  .bg-blue-1 { background: rgba(33, 150, 243, 0.16) !important; }
+  .bg-light-blue-1 { background: rgba(3, 169, 244, 0.16) !important; }
+  .bg-blue-grey-1 { background: rgba(96, 125, 139, 0.2) !important; }
+  .bg-red-1 { background: rgba(244, 67, 54, 0.16) !important; }
+  .bg-green-1 { background: rgba(76, 175, 80, 0.16) !important; }
+  .bg-teal-1 { background: rgba(0, 150, 136, 0.18) !important; }
+  .bg-cyan-1 { background: rgba(0, 188, 212, 0.16) !important; }
+  .bg-orange-1 { background: rgba(255, 152, 0, 0.16) !important; }
+  .bg-deep-orange-1 { background: rgba(255, 87, 34, 0.16) !important; }
+  .bg-amber-1 { background: rgba(255, 193, 7, 0.14) !important; }
+  .bg-amber-2 { background: rgba(255, 193, 7, 0.24) !important; }
+  .bg-purple-1 { background: rgba(156, 39, 176, 0.18) !important; }
+  .bg-indigo-1 { background: rgba(63, 81, 181, 0.18) !important; }
+
+  .text-dark,
+  .text-grey-10,
+  .text-grey-9,
+  .text-grey-8 { color: #e3e6ea !important; }
+  .text-grey-7 { color: #b6bbc3 !important; }
+  .text-grey-6,
+  .text-grey-5 { color: #8c929b !important; }
+  .text-red-10 { color: #ff8a80 !important; }
+  .text-amber-10 { color: #ffd54f !important; }
+  .text-blue-10,
+  .text-blue-9 { color: #90caf9 !important; }
+  .text-orange-9,
+  .text-deep-orange-9 { color: #ffb74d !important; }
+  .text-green-9 { color: #a5d6a7 !important; }
+  .text-indigo-9 { color: #c5cae9 !important; }
+
+  .q-drawer {
+    background: #171a1f;
+  }
+}

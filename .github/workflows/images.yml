@@ -1,0 +1,167 @@
+# Images Docker publiées sur ghcr.io à chaque tag de version vX.Y.Z :
+#   ghcr.io/aquasmanager/api et ghcr.io/aquasmanager/ui
+#   tags X.Y.Z, X.Y et latest, pour amd64 et arm64.
+# Une pré-version (vX.Y.Z-rc.N) ne publie que son propre tag, sans toucher à
+# latest : de quoi tester l'installation avant d'annoncer une version.
+# Chaque architecture est construite sur un runner natif (pas d'émulation), puis
+# les deux sont réunies dans une image multi-architecture. Enfin, une release
+# GitHub pointe vers la note de version du site.
+name: Images
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"]
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io/aquasmanager
+
+jobs:
+  build:
+    name: ${{ matrix.component }} (${{ matrix.arch }})
+    strategy:
+      fail-fast: true
+      matrix:
+        component: [api, ui]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Paramètres de build
+        id: args
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          {
+            echo "build-args<<EOF"
+            if [ "${{ matrix.component }}" = "api" ]; then
+              echo "APP_VERSION=$VERSION"
+              echo "GIT_SHA=$GITHUB_SHA"
+            else
+              # Adresse de l'API : « /api » par défaut, réglable au démarrage (AQUAS_API_URL)
+              echo "VITE_APP_ENV=prod"
+              echo "VITE_APP_VERSION=$GITHUB_SHA"
+              echo "VITE_APP_SEMVER=$VERSION"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build et envoi (par empreinte)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.component }}
+          platforms: linux/${{ matrix.arch }}
+          build-args: ${{ steps.args.outputs.build-args }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=FSL-1.1-ALv2
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ matrix.component }},push-by-digest=true,name-canonical=true,push=true
+          provenance: false
+          cache-from: type=gha,scope=${{ matrix.component }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}-${{ matrix.arch }}
+
+      - name: Empreinte
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.component }}-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: ${{ matrix.component }} (multi-arch)
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        component: [api, ui]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-${{ matrix.component }}-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image multi-architecture (X.Y.Z, X.Y, latest ; pré-version, son tag seul)
+        working-directory: /tmp/digests
+        run: |
+          IMAGE="$REGISTRY/${{ matrix.component }}"
+          VERSION="${GITHUB_REF_NAME#v}"
+          case "${{ matrix.component }}" in
+            api) DESCRIPTION="AquasManager : API (gestion et pilotage d'aquariums)" ;;
+            ui) DESCRIPTION="AquasManager : interface web (PWA)" ;;
+          esac
+          case "$VERSION" in
+            *-*) TAGS="--tag $IMAGE:$VERSION" ;;
+            *) TAGS="--tag $IMAGE:$VERSION --tag $IMAGE:${VERSION%.*} --tag $IMAGE:latest" ;;
+          esac
+          # shellcheck disable=SC2086
+          docker buildx imagetools create $TAGS \
+            --annotation "index:org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+            --annotation "index:org.opencontainers.image.description=$DESCRIPTION" \
+            --annotation "index:org.opencontainers.image.version=$VERSION" \
+            --annotation "index:org.opencontainers.image.licenses=FSL-1.1-ALv2" \
+            $(printf "$IMAGE@sha256:%s " *)
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+
+  release:
+    name: Release GitHub
+    needs: merge
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Créer la release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PRERELEASE=""
+          case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
+          # shellcheck disable=SC2086
+          gh release create "$GITHUB_REF_NAME" --repo "${{ github.repository }}" --verify-tag $PRERELEASE \
+            --title "AquasManager $VERSION" \
+            --notes "Notes de version : https://aquasmanager.fr/releases/$VERSION/ · Release notes: https://aquasmanager.fr/en/releases/$VERSION/
+
+          Images (amd64, arm64) :
+          - \`ghcr.io/aquasmanager/api:$VERSION\`
+          - \`ghcr.io/aquasmanager/ui:$VERSION\`
+
+          Mise à jour d'une installation Docker : \`sudo aquasmanager update\`"

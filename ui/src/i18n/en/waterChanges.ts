@@ -1,0 +1,40 @@
+import type fr from '../fr/waterChanges';
+
+const waterChanges: typeof fr = {
+  title: 'Water changes',
+  subtitle: 'Volume, salt used (taken from stock) and pace; each change is written to the logbook',
+  record: 'Record a water change',
+  when: 'Date and time',
+  volume: 'Volume of water changed',
+  percentHint: '{n} % of the tank’s {total} L',
+  salt: 'Salt (stock item)',
+  saltHint: 'The amount used is taken from stock',
+  noSaltItem: 'Add your salt to the Stock to track it',
+  saltPerLiter: 'Salt dose',
+  saltAmount: 'Salt used',
+  completeTask: 'Complete the task',
+  completeTaskHint: 'The matching maintenance task is ticked at the same time',
+  note: 'Remark',
+  of: 'of',
+  item: 'the water change of {date}',
+  deleteMessage: 'Delete this water change? The salt goes back to stock and the logbook note is removed.',
+  emptyTitle: 'No water change recorded',
+  emptyMessage: 'Record each change: volume, salt and average pace show up here, and on the parameter chart through the logbook.',
+  volumeRequired: 'Enter the volume changed.',
+  saved: 'Water change recorded.',
+  saveFailed: 'The water change could not be saved.',
+  loadFailed: 'The water changes could not be loaded.',
+  stats: {
+    last: 'Last change',
+    daysAgo: 'today | {n} day ago | {n} days ago',
+    perWeek: 'Average per week',
+    percentOfVolume: '{n} % of the volume, over 8 weeks',
+    over8Weeks: 'over 8 weeks',
+    thisMonth: 'This month',
+    count: 'no change | {n} change | {n} changes',
+    total: 'Changes recorded',
+    recorded: 'since the start',
+  },
+};
+
+export default waterChanges;

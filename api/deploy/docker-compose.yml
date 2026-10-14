@@ -1,0 +1,61 @@
+# AquasManager — installation Docker simple (un serveur, un port HTTP).
+#
+#   cp .env.example .env    # puis adapter les valeurs
+#   docker compose up -d
+#
+# Interface : http://<serveur>:${AQUAS_HTTP_PORT} ; l'API est relayée sous /api.
+name: aquasmanager
+
+services:
+  api:
+    image: ${AQUAS_API_IMAGE:-ghcr.io/aquasmanager/api:latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Aucun fichier de configuration : réglages par défaut + variables AQUAS_*
+      ENV: docker
+      AQUAS_ENV: docker
+      AQUAS_DEBUG: "false"
+      AQUAS_ROOT_PATH: /api
+      AQUAS_MQTT__HOST: mosquitto
+      AQUAS_FRONTEND_URLS: '["${AQUAS_PUBLIC_URL:-http://localhost:8080}"]'
+      # Même adresse que l'interface : le cookie de session n'a pas besoin de SameSite=None
+      AQUAS_AUTH__COOKIE_SAMESITE: lax
+    volumes:
+      # Base SQLite, sauvegardes et clé de signature générée au premier démarrage
+      - ./data/base:/app/base
+      - ./data/uploads:/app/uploads
+    depends_on:
+      - mosquitto
+
+  ui:
+    image: ${AQUAS_UI_IMAGE:-ghcr.io/aquasmanager/ui:latest}
+    restart: unless-stopped
+    environment:
+      AQUAS_API_URL: /api
+      AQUAS_API_UPSTREAM: http://api:8000
+      AQUAS_APP_ENV: ${AQUAS_APP_ENV:-}
+    ports:
+      - "${AQUAS_HTTP_PORT:-8080}:80"
+    depends_on:
+      - api
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    # Compte MQTT créé au démarrage à partir de .env (le même que l'API et les ESP32).
+    # Droits donnés à l'utilisateur mosquitto (le démarrage standard de l'image est remplacé ici)
+    entrypoint: >
+      sh -c 'mosquitto_passwd -b -c /mosquitto/config/passwd "$$MQTT_USER" "$$MQTT_PASSWORD"
+      && chown mosquitto:mosquitto /mosquitto/config/passwd && chmod 0700 /mosquitto/config/passwd
+      && chown -R mosquitto:mosquitto /mosquitto/data
+      && exec mosquitto -c /mosquitto/config/mosquitto.conf'
+    environment:
+      MQTT_USER: ${AQUAS_MQTT__USER:-aquasmanager}
+      MQTT_PASSWORD: ${AQUAS_MQTT__PASSWORD:?Renseigne AQUAS_MQTT__PASSWORD dans .env}
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./data/mosquitto:/mosquitto/data
+    ports:
+      # Les ESP32 se connectent au broker sur l'IP du serveur
+      - "1883:1883"
