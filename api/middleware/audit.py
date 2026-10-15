@@ -219,13 +219,25 @@ def _resolve_label_before(entry: dict) -> None:
         db.close()
 
 
+def _leaf_routes(routes):
+    """Routes finales de l'application. Depuis FastAPI 0.14x, un routeur inclus reste un bloc
+    (_IncludedRouter) au lieu d'être mis à plat : on descend dans son routeur d'origine. Nos routeurs
+    portent leur préfixe (APIRouter(prefix=...)), leurs routes ont donc déjà le chemin complet."""
+    for route in routes:
+        inner = getattr(route, "original_router", None)
+        if inner is not None:
+            yield from _leaf_routes(inner.routes)
+        else:
+            yield route
+
+
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method not in WRITE_METHODS or request.url.path in IGNORED_PATHS:
             return await call_next(request)
 
         template, path_params = None, {}
-        for route in request.app.router.routes:
+        for route in _leaf_routes(request.app.router.routes):
             match, child_scope = route.matches(request.scope)
             if match == Match.FULL:
                 template = getattr(route, "path", None)

@@ -1,4 +1,4 @@
-import { defineBoot } from '#q-app/wrappers';
+import { defineBoot } from '#q-app';
 import { initTheme } from 'src/composables/useTheme';
 import { listenInstallPrompt } from 'src/composables/useInstallPrompt';
 import { startUpdateChecks } from 'src/composables/useAppUpdate';

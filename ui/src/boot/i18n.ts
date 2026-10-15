@@ -1,4 +1,4 @@
-import { defineBoot } from '#q-app/wrappers';
+import { defineBoot } from '#q-app';
 import { i18n, currentLocale } from 'src/i18n/instance';
 import { applyLocale } from 'src/i18n/locale';
 import type { MessageSchema } from 'src/i18n';

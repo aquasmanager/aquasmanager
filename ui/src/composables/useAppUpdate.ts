@@ -2,9 +2,9 @@ import { ref } from 'vue';
 
 // Version de l'appli en cours d'exécution (injectée à la compilation) :
 // numéro SemVer et commit compilé (« dev » en local)
-export const APP_VERSION: string = process.env.APP_VERSION ?? '0.0.0';
-export const APP_BUILD: string = process.env.APP_BUILD ?? 'dev';
-export const APP_BUILT_AT: string = process.env.APP_BUILT_AT ?? '';
+export const APP_VERSION: string = import.meta.env.APP_VERSION ?? '0.0.0';
+export const APP_BUILD: string = import.meta.env.APP_BUILD ?? 'dev';
+export const APP_BUILT_AT: string = import.meta.env.APP_BUILT_AT ?? '';
 // Affichage : « 0.6.1 » en prod, « 0.6.2-dev.12 » en recette
 export const APP_VERSION_LABEL = APP_VERSION;
 

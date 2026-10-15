@@ -1,4 +1,4 @@
-import { defineBoot } from '#q-app/wrappers';
+import { defineBoot } from '#q-app';
 import { useAuthStore } from 'src/stores/authStore';
 import axios from 'axios';
 import { Role, type RouteMeta } from 'src/types/auth';

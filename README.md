@@ -38,7 +38,7 @@
 Sur une machine Linux avec Docker (Raspberry Pi 4/5, mini-PC, NAS…) :
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/aquasmanager/aquasmanager/main/api/deploy/install.sh -o install.sh
+curl -fsSL https://aquasmanager.fr/install.sh -o install.sh
 sudo bash install.sh
 ```
 

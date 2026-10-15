@@ -1,6 +1,6 @@
 # Compilation de l'interface sur l'architecture de la machine de build (même
 # résultat pour toutes les cibles) : pas d'émulation lente pour l'image ARM64
-FROM --platform=$BUILDPLATFORM node:22-bookworm AS build
+FROM --platform=$BUILDPLATFORM node:24-bookworm AS build
 WORKDIR /app
 COPY . .
 RUN npm install

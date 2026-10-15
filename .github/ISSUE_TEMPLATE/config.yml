@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Une question ? Besoin d'aide ?
+    url: https://github.com/aquasmanager/aquasmanager/discussions
+    about: "Installation, utilisation, matériel : posez votre question dans les Discussions."
   - name: Proposer ou corriger une espèce
     url: https://github.com/aquasmanager/catalogue/issues/new?template=espece.yml
     about: Le catalogue commun d'espèces a son propre dépôt.

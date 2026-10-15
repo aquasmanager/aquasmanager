@@ -27,6 +27,7 @@ API_IMAGE_DEFAULT="${AQUAS_API_IMAGE:-ghcr.io/aquasmanager/api:latest}"
 UI_IMAGE_DEFAULT="${AQUAS_UI_IMAGE:-ghcr.io/aquasmanager/ui:latest}"
 # Adresse où récupérer la dernière version de ce script (commande « aquasmanager reconfigure »)
 INSTALLER_URL="${AQUAS_INSTALLER_URL:-https://raw.githubusercontent.com/aquasmanager/aquasmanager/main/api/deploy/install.sh}"
+RELEASES_URL="${AQUAS_RELEASES_URL:-https://api.github.com/repos/aquasmanager/aquasmanager/releases}"
 MIN_DISK_MB=3000
 
 DIR="$DEFAULT_DIR"
@@ -724,12 +725,40 @@ install_cli() {
 set -euo pipefail
 DIR="$DIR"
 INSTALLER_URL="$INSTALLER_URL"
+RELEASES_URL="$RELEASES_URL"
 EOF
   cat >>"$target" <<'EOF'
 cd "$DIR"
 compose() { docker compose "$@"; }
 need_root() { [ "$(id -u)" -eq 0 ] || { echo "Lance cette commande avec sudo : sudo aquasmanager $*" >&2; exit 1; }; }
 public_url() { sed -n 's/^AQUAS_PUBLIC_URL=//p' .env; }
+env_get() { sed -n "s/^$1=//p" .env | tail -n 1; }
+
+# Remplace le tag d'une image du .env (« registre:port/image:tag » : seul le dernier « :tag » change)
+set_image_tag() {
+  local current repo
+  current="$(env_get "$1")"
+  repo="$current"
+  case "${current##*/}" in *:*) repo="${current%:*}" ;; esac
+  sed -i "s#^$1=.*#$1=$repo:$2#" .env
+}
+
+installed_version() {
+  local v
+  v="$(compose exec -T api printenv AQUAS_VERSION 2>/dev/null | tr -d '\r' || true)"
+  echo "${v:-inconnue (application arrêtée ?)}"
+}
+
+# Dernière version stable publiée ; à défaut, la dernière pré-version
+latest_version() {
+  local v
+  v="$(curl -fsSL --max-time 10 "$RELEASES_URL/latest" 2>/dev/null | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' | head -n 1)"
+  if [ -z "$v" ]; then
+    v="$(curl -fsSL --max-time 10 "$RELEASES_URL?per_page=1" 2>/dev/null | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' | head -n 1)"
+    [ -n "$v" ] && v="$v (pré-version)"
+  fi
+  echo "${v:-inconnue (pas d’accès à Internet ?)}"
+}
 
 backup() {
   echo "Sauvegarde (contenu et destination réglés dans l'appli)..."
@@ -746,13 +775,42 @@ case "${1:-help}" in
   logs) shift; compose logs -f --tail=200 "$@" ;;
   start | stop | restart) need_root "$1"; compose "$1" ;;
   backup) need_root backup; backup ;;
+  version)
+    echo "Version installée : $(installed_version)"
+    echo "Dernière version publiée : $(latest_version)"
+    echo "Images : $(env_get AQUAS_API_IMAGE) et $(env_get AQUAS_UI_IMAGE)"
+    ;;
   update)
     need_root update
+    target="${2:-}"
+    if [ -n "$target" ]; then
+      target="${target#v}"
+      if ! [[ "$target" =~ ^(latest|[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$ ]]; then
+        echo "Version invalide : $2 (exemples : 1.0.1, v1.0.1, latest)" >&2
+        exit 1
+      fi
+    fi
     backup || echo "Sauvegarde impossible (application arrêtée ?) : mise à jour quand même." >&2
+    if [ -n "$target" ]; then
+      cp .env .env.avant-update
+      set_image_tag AQUAS_API_IMAGE "$target"
+      set_image_tag AQUAS_UI_IMAGE "$target"
+      if ! compose pull api ui; then
+        mv .env.avant-update .env
+        echo "Version $target introuvable : rien n'a été changé." >&2
+        exit 1
+      fi
+      rm -f .env.avant-update
+    fi
     compose pull
     compose up -d --remove-orphans
     docker image prune -f >/dev/null
-    echo "À jour. Interface : $(public_url)"
+    echo "À jour : $(installed_version). Interface : $(public_url)"
+    pinned="$(env_get AQUAS_API_IMAGE)"
+    case "$pinned" in
+      *:latest) ;;
+      *) echo "Version figée (${pinned##*:}) : « sudo aquasmanager update latest » pour suivre les nouvelles versions." ;;
+    esac
     ;;
   reconfigure)
     need_root reconfigure
@@ -784,7 +842,9 @@ Utilisation : aquasmanager <commande>
 
   status        état des services et adresse de l'interface
   logs [svc]    journaux en direct (api, ui, mosquitto...)
-  update        sauvegarde puis mise à jour vers la dernière version
+  version       version installée et dernière version publiée
+  update [VER]  sauvegarde puis mise à jour (dernière version, ou VER : 1.0.1, latest...)
+                Revenir en arrière : update VER, puis restaurer la sauvegarde si besoin
   backup        sauvegarde immédiate (contenu et destination réglés dans l'appli)
   start|stop|restart
   reconfigure   relancer les questions de l'installation (réglages, composants)

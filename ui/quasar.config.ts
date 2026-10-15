@@ -1,10 +1,10 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-import { defineConfig } from '#q-app/wrappers';
+import { defineConfig } from '#q-app';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { cpSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, writeFileSync } from 'node:fs';
 
 // Numéro de version (SemVer, même numéro que l'API) calculé à partir des tags
 // vX.Y.Z : passé par la CI (VITE_APP_SEMVER), sinon scripts/version.sh en local.
@@ -60,9 +60,30 @@ export default defineConfig((ctx) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {
-      // Inventaire des licences de l'interface (page « Licences ») ; échoue si
-      // une licence incompatible avec une diffusion commerciale apparaît
-      env: { APP_VERSION, APP_BUILD, APP_BUILT_AT: BUILT_AT },
+      // Numéro de version, commit et date de compilation : import.meta.env.APP_*
+      defineEnv: { APP_VERSION, APP_BUILD, APP_BUILT_AT: BUILT_AT },
+
+      // Variables exposées au navigateur : celles qui commencent par VITE_ (adresse de l'API, badge
+      // d'environnement, version), venant du terminal (CI, Dockerfile) ou des fichiers .env.development
+      // / .env.production s'ils existent (le dépôt public n'en a pas : tout se règle au démarrage)
+      env: {
+        clientPrefix: 'VITE_',
+        file: [ctx.dev ? '.env.development' : '.env.production'].filter((f) =>
+          existsSync(fileURLToPath(new URL(`./${f}`, import.meta.url))),
+        ),
+      },
+
+      // Anciens alias d'import (src/, components/…), retirés par défaut depuis @quasar/app-vite 3
+      alias: {
+        src: ctx.appPaths.srcDir,
+        app: ctx.appPaths.appDir,
+        components: ctx.appPaths.resolve.src('components'),
+        layouts: ctx.appPaths.resolve.src('layouts'),
+        pages: ctx.appPaths.resolve.src('pages'),
+        assets: ctx.appPaths.resolve.src('assets'),
+        boot: ctx.appPaths.resolve.src('boot'),
+        stores: ctx.appPaths.resolve.src('stores'),
+      },
 
       afterBuild({ quasarConf }) {
         const dist = quasarConf.build?.distDir ?? 'dist/spa';
@@ -98,12 +119,8 @@ export default defineConfig((ctx) => {
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
       // publicPath: '/',
-      // analyze: true,
-      // env: {},
-      // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
-      // polyfillModulePreload: true,
       // distDir
 
       // extendViteConf (viteConf) {},

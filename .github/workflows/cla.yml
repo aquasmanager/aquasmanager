@@ -8,6 +8,10 @@ on:
   pull_request_target:
     types: [opened, synchronize, closed]
 
+# L'action du CLA n'existe qu'en Node 20 (déprécié) : on la fait tourner sous Node 24
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   actions: write
   contents: write

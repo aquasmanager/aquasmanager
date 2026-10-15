@@ -10,7 +10,7 @@ Sur la machine qui hébergera AquasManager (Debian, Ubuntu ou Raspberry Pi OS
 64 bits), une seule commande :
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/aquasmanager/aquasmanager/main/api/deploy/install.sh | sudo bash
+curl -fsSL https://aquasmanager.fr/install.sh | sudo bash
 # ou, après avoir téléchargé le fichier :
 sudo bash install.sh
 ```
@@ -35,7 +35,9 @@ s'affichent en fenêtres (whiptail) ou en texte simple (`--plain`).
 
 ```sh
 aquasmanager status          # état et adresse de l'interface
+aquasmanager version         # version installée et dernière version publiée
 sudo aquasmanager update     # sauvegarde puis mise à jour
+sudo aquasmanager update 1.0.1   # version précise (ou « latest » pour suivre les nouvelles versions)
 sudo aquasmanager backup     # sauvegarde (data/base/backups, 5 dernières gardées)
 aquasmanager logs api        # journaux en direct
 sudo aquasmanager reconfigure  # changer les réglages ou les composants

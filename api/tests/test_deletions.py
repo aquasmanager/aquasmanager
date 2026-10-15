@@ -81,3 +81,15 @@ def test_coral_cites_is_optional(api, aquarium):
                                   "aggressiveness_level": 5, "resistance_level": 5, "location_level": 5,
                                   "date_acquisition": "2026-01-01"}, code=201)
     assert coral["cites"] == ""
+
+
+def test_duplicate_aquarium_name_is_a_clear_conflict(api, aquarium, uid):
+    """Nom déjà pris : 409 avec un message lisible (et non une erreur 500), à la création comme au renommage."""
+    payload = {"name": aquarium["name"], "volume": 100, "water_type": "sea", "biotope": "récifal",
+               "date_creation": "2026-01-01"}
+    res = api.post("/aquariums/", payload, code=409)
+    assert res["detail"] == "Un aquarium porte déjà ce nom."
+    other = api.post("/aquariums/", {**payload, "name": f"Autre bac {uid}"}, code=201)
+    res = api.patch(f"/aquariums/{other['id']}", {"name": aquarium["name"]}, code=409)
+    assert res["detail"] == "Un aquarium porte déjà ce nom."
+    assert api.patch(f"/aquariums/{other['id']}", {"name": f"Autre bac {uid}", "volume": 120})["volume"] == 120

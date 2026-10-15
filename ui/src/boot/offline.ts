@@ -1,5 +1,5 @@
 import { t } from 'src/i18n/instance';
-import { defineBoot } from '#q-app/wrappers';
+import { defineBoot } from '#q-app';
 import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { Notify } from 'quasar';
 import { newKey } from 'src/offline/queued';

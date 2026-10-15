@@ -90,7 +90,7 @@
               color="positive"
               dense
               :disable="!can.edit || !isControllerOnline(props.row) || isRuleDriven(props.row)"
-              @update:model-value="(isOn: boolean) => onStatusChange(props.row, isOn ? EquipmentStatus.ON : EquipmentStatus.OFF)"
+              @update:model-value="(isOn: boolean) => onToggle(props.row, isOn)"
             >
               <q-tooltip v-if="isRuleDriven(props.row)">{{ t('equipments.forceHelp') }}</q-tooltip>
             </q-toggle>
@@ -542,6 +542,10 @@ async function onModeChange(equipment: Equipment, newMode: EquipmentMode) {
     equipment.mode = previousMode;
     $q.notify({ type: 'negative', message: apiErrorMessage(err, t('equipments.notify.modeFailed')) });
   }
+}
+
+function onToggle(equipment: Equipment, isOn: boolean) {
+  void onStatusChange(equipment, isOn ? EquipmentStatus.ON : EquipmentStatus.OFF);
 }
 
 async function onStatusChange(equipment: Equipment, newStatus: EquipmentStatus) {

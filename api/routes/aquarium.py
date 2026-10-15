@@ -4,6 +4,7 @@ Aquariums : fiche, caractéristiques, contenu et réglages.
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from middleware.auth import min_role_required
 from models.aquarium import Aquarium
@@ -19,6 +20,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/aquariums", tags=["aquariums"], dependencies=[Depends(min_role_required("consult"))])
 
+DUPLICATE_NAME = "Un aquarium porte déjà ce nom."
+
+
+def _ensure_unique_name(db: Session, name: str, exclude_id: int | None = None) -> None:
+    query = db.query(Aquarium.id).filter(Aquarium.name == name)
+    if exclude_id is not None:
+        query = query.filter(Aquarium.id != exclude_id)
+    if query.first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=DUPLICATE_NAME)
+
 
 @router.post(
     "/",
@@ -27,6 +38,7 @@ router = APIRouter(prefix="/aquariums", tags=["aquariums"], dependencies=[Depend
     dependencies=[Depends(min_role_required("user"))],
 )
 def create_aquarium(aquarium_in: AquariumCreate, db: Session = Depends(get_db)):
+    _ensure_unique_name(db, aquarium_in.name)
     try:
         db_aquarium = Aquarium(**aquarium_in.model_dump())
         db.add(db_aquarium)
@@ -41,6 +53,9 @@ def create_aquarium(aquarium_in: AquariumCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(db_aquarium)
         return db_aquarium
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=DUPLICATE_NAME)
     except Exception:
         logger.exception("Erreur lors de l'ajout de l'aquarium")
         raise
@@ -59,7 +74,10 @@ def update_aquarium(aquarium_id: int, update_data: AquariumUpdate, db: Session =
 
         updated = False
         old_name = aquarium.name
-        for field, value in update_data.model_dump(exclude_unset=True).items():
+        changes = update_data.model_dump(exclude_unset=True)
+        if changes.get("name") and changes["name"] != old_name:
+            _ensure_unique_name(db, changes["name"], exclude_id=aquarium.id)
+        for field, value in changes.items():
             if getattr(aquarium, field) != value:
                 setattr(aquarium, field, value)
                 updated = True

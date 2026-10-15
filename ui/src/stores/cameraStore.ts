@@ -76,7 +76,7 @@ export const useCameraStore = defineStore('camera', () => {
           .text()
           .then((text) => (JSON.parse(text) as { detail?: unknown }).detail)
           .catch(() => undefined);
-        if (typeof detail === 'string') throw new Error(detail);
+        if (typeof detail === 'string') throw new Error(detail, { cause: err });
       }
       throw err;
     }

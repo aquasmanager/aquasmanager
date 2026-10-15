@@ -28,6 +28,10 @@ if [ -n "${AQUAS_API_UPSTREAM:-}" ]; then
   cat > /etc/nginx/conf.d/api-proxy.inc <<CONF_EOF
     location /api/ {
         proxy_pass ${AQUAS_API_UPSTREAM%/}/;
+        # Redirections de l'API (ex. /aquariums → /aquariums/) : l'API ne connaît ni le préfixe /api ni
+        # le port public ; on les rend relatives pour que le navigateur reste sur la bonne adresse
+        proxy_redirect ~^https?://[^/]+(/.*)\$ /api\$1;
+        absolute_redirect off;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
