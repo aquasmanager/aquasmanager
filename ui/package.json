@@ -47,7 +47,7 @@
     "@eslint/js": "^10.0.1",
     "@intlify/message-compiler": "^11.4.14",
     "@intlify/unplugin-vue-i18n": "^11.2.5",
-    "@quasar/app-vite": "^3.10.2",
+    "@quasar/app-vite": "^3.10.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.19.2",
     "@types/prismjs": "^1.26.6",
