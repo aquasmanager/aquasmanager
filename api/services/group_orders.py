@@ -37,6 +37,11 @@ def _installation() -> str:
 
 def hub(method: str, path: str, token: Optional[str] = None, client: Optional[httpx.Client] = None, **kwargs):
     """Appel au hub ; ses refus (404, 409, 422, 429...) sont relayés tels quels."""
+    if settings.demo:
+        # Démo publique : annonces d'exemple, rien n'est envoyé au vrai hub
+        from services.demo import demo_group_orders_hub
+
+        return demo_group_orders_hub(method, path, token, **kwargs)
     if not enabled():
         raise HTTPException(status_code=503, detail="Commandes groupées indisponibles : hub désactivé.")
     headers = {"X-Installation": _installation()}

@@ -1,8 +1,9 @@
 """
 notification_settings.py (routes)
 
-Choix du canal d'alerte (Telegram, ntfy, les deux, aucun) et test d'envoi.
-Réservé aux administrateurs ; les jetons ne sont jamais renvoyés.
+Choix du canal d'alerte (Telegram, ntfy, les deux, aucun), e-mail et test
+d'envoi. Réservé aux administrateurs ; jetons et mot de passe SMTP ne sont
+jamais renvoyés.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -32,6 +33,14 @@ def _read(conf: NotificationSettings) -> dict:
         "ntfy_url": conf.ntfy_url,
         "ntfy_topic": conf.ntfy_topic,
         "ntfy_token_set": bool(conf.ntfy_token),
+        "email_enabled": bool(conf.email_enabled),
+        "smtp_host": conf.smtp_host,
+        "smtp_port": conf.smtp_port or 587,
+        "smtp_security": conf.smtp_security or "starttls",
+        "smtp_user": conf.smtp_user,
+        "smtp_password_set": bool(conf.smtp_password),
+        "email_from": conf.email_from,
+        "email_to": conf.email_to,
     }
 
 
@@ -44,14 +53,18 @@ def read_notification_settings(db: Session = Depends(get_db)):
 def update_notification_settings(update: NotificationSettingsUpdate, db: Session = Depends(get_db)):
     conf = get_notification_settings(db)
     for field, value in update.model_dump(exclude_unset=True).items():
-        if field == "provider":
-            conf.provider = value
+        if field in ("provider", "email_enabled", "smtp_port", "smtp_security"):
+            if value is not None:
+                setattr(conf, field, value)
         elif field == "ntfy_url":
             if value:
                 conf.ntfy_url = value
         else:
             # "" efface la valeur (ex : retirer un jeton)
             setattr(conf, field, value.strip() or None if value else None)
+    if conf.email_enabled and not (conf.smtp_host and conf.email_to):
+        db.rollback()
+        raise HTTPException(status_code=422, detail="E-mail : indique le serveur SMTP et au moins un destinataire.")
     db.commit()
     db.refresh(conf)
     return _read(conf)

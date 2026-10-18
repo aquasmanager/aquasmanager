@@ -141,3 +141,72 @@ def test_scan_pages_into_one_pdf(api, client, admin_headers, uid):
 
     bad = [("pages", ("x.jpg", b"pas une image", "image/jpeg"))]
     assert client.post(f"/purchase-documents/{doc['id']}/scan", files=bad, headers=admin_headers).status_code == 400
+
+
+def test_document_cites_number_copied_to_linked_coral(api, aquarium, uid):
+    """Corail sans numéro CITES rattaché à un document : il reçoit le numéro du document."""
+    def coral(name, scientific_name, cites=""):
+        return api.post("/corals/", {
+            "aquarium_id": aquarium["id"], "name": name, "cites": cites, "type": "SPS",
+            "scientific_name": scientific_name, "family": "Acroporidae", "origin": "Mariculture",
+            "light_range": {"min": 6, "max": 9}, "brewing_range": {"min": 6, "max": 9},
+            "aggressiveness_level": 3, "resistance_level": 4, "location_level": 8, "date_acquisition": "2026-05-01",
+        }, code=201)
+
+    def cites_of(coral_id):
+        return api.get(f"/corals/{coral_id}")["cites"]
+
+    # Cas signalé : document à un seul numéro, corail rattaché à la création du document
+    plain = coral(f"Acro {uid}", "Acropora millepora")
+    api.post("/purchase-documents/", {"title": f"Facture {uid}", "cites_numbers": [f"FR-{uid}-1"],
+                                      "links": [{"entity_type": "corals", "entity_id": plain["id"]}]}, code=201)
+    assert cites_of(plain["id"]) == f"FR-{uid}-1"
+
+    # Rattaché plus tard, par une modification du document
+    later = coral(f"Acro bis {uid}", "Acropora millepora")
+    doc = api.post("/purchase-documents/", {"title": f"Facture 2 {uid}", "cites_numbers": [f"FR-{uid}-2"]}, code=201)
+    api.patch(f"/purchase-documents/{doc['id']}", {"links": [{"entity_type": "corals", "entity_id": later["id"]}]})
+    assert cites_of(later["id"]) == f"FR-{uid}-2"
+
+    # Plusieurs numéros : celui de l'espèce du corail ; ambigu : rien
+    species = api.post("/species/corals", {
+        "common_name": f"Montipora test {uid}", "scientific_name": "Montipora digitata", "type": "SPS",
+        "light_min": 6, "light_max": 9, "brewing_min": 4, "brewing_max": 7, "aggressiveness_level": 3,
+        "resistance_level": 6, "location_level": 6,
+    }, code=201)
+    monti = coral(f"Monti {uid}", "Montipora digitata")
+    other = coral(f"Autre {uid}", "Seriatopora hystrix")
+    api.post("/purchase-documents/", {"title": f"Facture 3 {uid}", "cites_entries": [
+        {"number": f"FR-{uid}-M", "coral_species_id": species["id"]}, {"number": f"FR-{uid}-X"}],
+        "links": [{"entity_type": "corals", "entity_id": monti["id"]}, {"entity_type": "corals", "entity_id": other["id"]}],
+    }, code=201)
+    assert cites_of(monti["id"]) == f"FR-{uid}-M"
+    assert cites_of(other["id"]) == ""
+
+    # Numéro déjà saisi sur le corail : jamais remplacé
+    own = coral(f"Perso {uid}", "Acropora millepora", cites=f"MON-{uid}")
+    api.post("/purchase-documents/", {"title": f"Facture 4 {uid}", "cites_numbers": [f"FR-{uid}-4"],
+                                      "links": [{"entity_type": "corals", "entity_id": own["id"]}]}, code=201)
+    assert cites_of(own["id"]) == f"MON-{uid}"
+
+
+def test_document_supplier_copied_as_coral_provenance(api, aquarium, uid):
+    """Corail rattaché à un document : sa provenance vide reprend le fournisseur / cédant du document."""
+    def coral(name, acquired_from=None):
+        body = {
+            "aquarium_id": aquarium["id"], "name": name, "cites": "", "type": "LPS",
+            "scientific_name": "Euphyllia glabrescens", "family": "Euphylliidae", "origin": "Mariculture",
+            "light_range": {"min": 4, "max": 8}, "brewing_range": {"min": 2, "max": 5},
+            "aggressiveness_level": 5, "resistance_level": 5, "location_level": 3, "date_acquisition": "2026-05-01",
+        }
+        if acquired_from:
+            body["acquired_from"] = acquired_from
+        return api.post("/corals/", body, code=201)
+
+    empty = coral(f"Torche {uid}")
+    known = coral(f"Torche bis {uid}", acquired_from="Bourse de Rennes")
+    api.post("/purchase-documents/", {"title": f"Facture fournisseur {uid}", "supplier": "Récif Shop",
+                                      "links": [{"entity_type": "corals", "entity_id": empty["id"]},
+                                                {"entity_type": "corals", "entity_id": known["id"]}]}, code=201)
+    assert api.get(f"/corals/{empty['id']}")["acquired_from"] == "Récif Shop"
+    assert api.get(f"/corals/{known['id']}")["acquired_from"] == "Bourse de Rennes"

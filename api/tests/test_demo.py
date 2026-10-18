@@ -46,6 +46,14 @@ print(json.dumps({
     "files": sum(len(d["files"]) for d in client.get("/purchase-documents/", headers=h).json()),
     "coral_photo": client.get(f"/photos/corals/1/main", headers=h).headers.get("content-type"),
     "journal": len(client.get("/journal/", params={"aquarium_id": reef["id"]}, headers=h).json()),
+    "frags": sorted((f["name"], f["quantity"]) for f in client.get("/frags/", headers=h).json()),
+    "nearby": [(o["department"], o["my_role"]) for o in client.get("/group-orders/", headers=h).json()],
+    "mine": {o["id"]: (o["role"], len(o["members"]), bool(o["contact"])) for o in client.get("/group-orders/mine", headers=h).json()},
+    "items": [i["name"] for o in client.get("/group-orders/mine", headers=h).json() if o["id"] == "demo-sel" for m in o["members"] for i in m["items"]],
+    "settings": client.put("/group-orders/settings", json={"departments": ["44"], "notify": True}, headers=h).status_code,
+    "nearby_44": sorted({o["department"] for o in client.get("/group-orders/", headers=h).json()}),
+    "create": client.post("/group-orders/", json={}, headers=h).status_code,
+    "join": client.post("/group-orders/demo-plantes/join", json={"name": "x", "contact": "y"}, headers=h).status_code,
 }))
 '''
 
@@ -71,6 +79,14 @@ def test_demo_reset_and_guards(tmp_path):
     assert data["files"] == 3
     assert data["coral_photo"] == "image/jpeg"
     assert data["journal"] >= 15  # notes, changements d'eau et ajouts de vivants automatiques
+    # Boutures tirées des pieds mères
+    assert data["frags"] == [["Acropora millepora", 3], ["Zoanthus Utter Chaos", 6]]
+    # Commandes groupées d'exemple, servies par la démo (jamais le vrai hub)
+    assert data["nearby"] == [["35", "owner"], ["35", "participant"], ["35", None]]
+    assert data["mine"] == {"demo-coraux": ["owner", 2, True], "demo-sel": ["participant", 1, True]}
+    assert data["settings"] == 200 and data["nearby_44"] == ["44"]
+    assert data["items"] == ["Sel récifal, seau de 25 kg", "Additif KH 1 L"]  # lignes d'articles du participant
+    assert data["create"] == 403 and data["join"] == 403
 
 
 def test_demo_blocked_routes():
@@ -84,6 +100,8 @@ def test_demo_blocked_routes():
     assert is_blocked("PUT", "/assistant/settings")
     assert is_blocked("POST", "/group-orders/")
     assert not is_blocked("GET", "/group-orders/mine")
+    assert not is_blocked("PUT", "/group-orders/settings")
+    assert is_blocked("POST", "/group-orders/demo-sel/join")
     assert not is_blocked("PUT", "/me/language")
     assert not is_blocked("GET", "/users/me")
     assert not is_blocked("POST", "/equipments/3/toggle")

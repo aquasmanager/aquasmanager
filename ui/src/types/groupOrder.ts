@@ -3,11 +3,19 @@
 export type GroupOrderStatus = 'open' | 'closed' | 'cancelled';
 export type GroupOrderRole = 'owner' | 'participant' | null;
 
+// Une ligne de demande : corail / produit, lien direct chez le magasin, quantité
+export interface GroupOrderItem {
+  name: string;
+  url?: string | null;
+  quantity: number;
+}
+
 export interface GroupOrderMember {
   id: string;
   name: string;
   contact: string;
   message?: string | null;
+  items?: GroupOrderItem[];
   created_at?: string;
 }
 

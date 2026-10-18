@@ -51,6 +51,7 @@ from services.light_profiles import (
     profile_bounds,
     shifted_curves,
 )
+from services.esphome_generator import TIMEZONE
 from services.naming import ensure_unique_light_name
 
 logger = logging.getLogger(__name__)
@@ -189,6 +190,7 @@ def get_light_catalog():
              "start": profile_bounds(p)[0], "end": profile_bounds(p)[1]}
             for k, p in PROFILES.items()
         ],
+        "timezone": TIMEZONE,
     }
 
 

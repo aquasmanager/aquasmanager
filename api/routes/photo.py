@@ -16,6 +16,7 @@ from middleware.auth import FRAG_ROLES, min_role_required
 from models.photo import Photo, PhotoType
 from schemas.photo import PhotoRead
 from middleware.database import get_db
+from utils.safe_path import safe_join
 
 logger = logging.getLogger(__name__)
 
@@ -86,12 +87,12 @@ def create_photo(
     db: Session = Depends(get_db),
 ):
     # Définit le répertoire d'upload et le crée s'il n'existe pas
-    folder = os.path.join(UPLOAD_ROOT, entity_type.value, str(entity_id))
+    folder = safe_join(UPLOAD_ROOT, entity_type.value, str(entity_id))
     os.makedirs(folder, exist_ok=True)
 
     # Nom généré (jamais celui du navigateur : pas de « ../ » possible) et taille limitée
     unique_name = f"{uuid.uuid4().hex}{_safe_extension(file)}"
-    filepath = os.path.join(folder, unique_name)
+    filepath = safe_join(UPLOAD_ROOT, entity_type.value, str(entity_id), unique_name)
     written = 0
     with open(filepath, "wb") as f:
         while chunk := file.file.read(1024 * 1024):
@@ -139,7 +140,7 @@ def get_photo_main(entity_type: PhotoType, entity_id: int, db: Session = Depends
     if not photo:
         path = os.path.join("default", "photo", "image_default.jpg")
     else:
-        path = os.path.join(UPLOAD_ROOT, entity_type.value, str(entity_id), str(photo.filename))
+        path = safe_join(UPLOAD_ROOT, entity_type.value, str(entity_id), str(photo.filename))
 
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Fichier image non trouvé")
@@ -162,7 +163,7 @@ def get_photo_file(entity_type: PhotoType, entity_id: int, photo_id: int, db: Se
     if not photo:
         raise HTTPException(status_code=404, detail="Photo non trouvée")
 
-    path = os.path.join(UPLOAD_ROOT, entity_type.value, str(entity_id), str(photo.filename))
+    path = safe_join(UPLOAD_ROOT, entity_type.value, str(entity_id), str(photo.filename))
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Fichier image non trouvé")
 
@@ -205,7 +206,7 @@ def delete_photo(entity_type: PhotoType, entity_id: int, photo_id: int, db: Sess
     if not photo:
         raise HTTPException(status_code=404, detail="Photo non trouvée")
 
-    path = os.path.join(UPLOAD_ROOT, entity_type.value, str(entity_id), photo.filename)
+    path = safe_join(UPLOAD_ROOT, entity_type.value, str(entity_id), str(photo.filename))
 
     try:
         if os.path.exists(path):
@@ -244,7 +245,7 @@ def delete_photo_entity(entity_type: PhotoType, entity_id: int, db: Session = De
     if not photos:
         return {"detail": "Aucune photo à supprimer"}
 
-    path = os.path.join(UPLOAD_ROOT, entity_type.value, str(entity_id))
+    path = safe_join(UPLOAD_ROOT, entity_type.value, str(entity_id))
 
     try:
         if os.path.exists(path):

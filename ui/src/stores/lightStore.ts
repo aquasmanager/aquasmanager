@@ -10,11 +10,14 @@ import type {
   SchedulePoint,
   Spectrum,
 } from 'src/types/light';
+import { useControllerStore } from 'src/stores/controllerStore';
 
 export const useLightStore = defineStore('lights', () => {
   const lights = ref<Light[]>([]);
   const spectra = ref<Spectrum[]>([]);
   const profiles = ref<LightProfile[]>([]);
+  // Fuseau des contrôleurs (firmware), pour le repère « maintenant »
+  const timezone = ref<string | undefined>(undefined);
   const loading = ref(false);
 
   // Chaque route renvoie la lampe complète à jour : on remplace la copie locale
@@ -23,6 +26,12 @@ export const useLightStore = defineStore('lights', () => {
     if (index === -1) lights.value.push(light);
     else lights.value[index] = light;
     return light;
+  }
+
+  // Câblage modifié (lampe, canal, broche) : l'API marque le contrôleur « à reflasher ».
+  // On relit les contrôleurs pour afficher le bandeau de flash sans recharger la page.
+  function refreshControllers() {
+    void useControllerStore().fetch().catch(() => undefined);
   }
 
   async function fetch(aquariumId: number) {
@@ -37,34 +46,46 @@ export const useLightStore = defineStore('lights', () => {
 
   async function fetchCatalog() {
     if (spectra.value.length > 0) return;
-    const { data } = await axios.get<{ spectra: Spectrum[]; profiles: LightProfile[] }>('/lights/catalog');
+    const { data } = await axios.get<{ spectra: Spectrum[]; profiles: LightProfile[]; timezone?: string }>('/lights/catalog');
     spectra.value = data.spectra;
     profiles.value = data.profiles;
+    timezone.value = data.timezone;
   }
 
   async function create(payload: LightInput) {
-    return upsert((await axios.post<Light>('/lights/', payload)).data);
+    const light = upsert((await axios.post<Light>('/lights/', payload)).data);
+    refreshControllers();
+    return light;
   }
 
   async function update(id: number, payload: Partial<LightInput>) {
-    return upsert((await axios.patch<Light>(`/lights/${id}`, payload)).data);
+    const light = upsert((await axios.patch<Light>(`/lights/${id}`, payload)).data);
+    refreshControllers();
+    return light;
   }
 
   async function remove(id: number) {
     await axios.delete(`/lights/${id}`);
+    refreshControllers();
     lights.value = lights.value.filter((l) => l.id !== id);
   }
 
   async function addChannel(lightId: number, payload: LightChannelInput) {
-    return upsert((await axios.post<Light>(`/lights/${lightId}/channels`, payload)).data);
+    const light = upsert((await axios.post<Light>(`/lights/${lightId}/channels`, payload)).data);
+    refreshControllers();
+    return light;
   }
 
   async function updateChannel(channelId: number, payload: Partial<LightChannelInput>) {
-    return upsert((await axios.patch<Light>(`/lights/channels/${channelId}`, payload)).data);
+    const light = upsert((await axios.patch<Light>(`/lights/channels/${channelId}`, payload)).data);
+    refreshControllers();
+    return light;
   }
 
   async function removeChannel(channelId: number) {
-    return upsert((await axios.delete<Light>(`/lights/channels/${channelId}`)).data);
+    const light = upsert((await axios.delete<Light>(`/lights/channels/${channelId}`)).data);
+    refreshControllers();
+    return light;
   }
 
   async function setSchedule(channelId: number, points: SchedulePoint[]) {
@@ -104,6 +125,7 @@ export const useLightStore = defineStore('lights', () => {
     lights,
     spectra,
     profiles,
+    timezone,
     loading,
     fetch,
     fetchCatalog,

@@ -53,6 +53,9 @@
               <q-item-section>
                 <q-item-label class="text-weight-medium">{{ m.name }}</q-item-label>
                 <q-item-label caption class="contact">{{ m.contact }}</q-item-label>
+                <q-item-label v-if="m.items?.length">
+                  <GroupOrderItems :items="m.items" />
+                </q-item-label>
                 <q-item-label v-if="m.message" caption class="description">{{ m.message }}</q-item-label>
               </q-item-section>
               <q-item-section side>
@@ -66,8 +69,26 @@
 
         <!-- Participant : sa demande -->
         <q-card-section v-if="order.my_role === 'participant' && order.members?.length" class="q-pt-none">
-          <div class="text-subtitle2 text-weight-bold q-mb-xs">{{ t('groupOrders.myRequest') }}</div>
-          <div class="text-body2 description">{{ order.members[0]!.message || '—' }}</div>
+          <div class="row items-center justify-between q-mb-xs">
+            <div class="text-subtitle2 text-weight-bold">{{ t('groupOrders.myRequest') }}</div>
+            <q-btn v-if="!editing && order.status === 'open' && can.edit" flat dense no-caps color="primary" icon="edit"
+              :label="t('groupOrders.editRequest')" @click="startEdit" />
+          </div>
+          <template v-if="editing">
+            <div class="column gap-sm">
+              <GroupOrderItemsEditor v-model="edit.items" />
+              <q-input v-model="edit.message" outlined dense type="textarea" autogrow maxlength="1000" :label="t('groupOrders.join.message')" :placeholder="t('groupOrders.join.messagePlaceholder')" />
+              <div class="row justify-end q-gutter-sm">
+                <q-btn flat no-caps color="grey-7" :label="t('common.cancel')" :disable="busy" @click="editing = false" />
+                <q-btn unelevated no-caps color="primary" icon="save" :label="t('common.save')" :loading="busy" @click="saveEdit" />
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <GroupOrderItems v-if="order.members[0]!.items?.length" :items="order.members[0]!.items" />
+            <div v-if="order.members[0]!.message" class="text-body2 description">{{ order.members[0]!.message }}</div>
+            <div v-else-if="!order.members[0]!.items?.length" class="text-body2">—</div>
+          </template>
         </q-card-section>
 
         <!-- Passant : rejoindre -->
@@ -78,6 +99,8 @@
               <div class="col-12 col-sm-5"><q-input v-model="join.name" outlined dense maxlength="40" :label="t('groupOrders.join.name')" /></div>
               <div class="col-12 col-sm-7"><q-input v-model="join.contact" outlined dense maxlength="120" :label="t('groupOrders.join.contact')" /></div>
             </div>
+            <div class="text-body2 text-weight-medium">{{ t('groupOrders.join.items') }}</div>
+            <GroupOrderItemsEditor v-model="join.items" />
             <q-input v-model="join.message" outlined dense type="textarea" autogrow maxlength="1000" :label="t('groupOrders.join.message')" :placeholder="t('groupOrders.join.messagePlaceholder')" />
             <div class="text-caption text-grey-7">{{ t('groupOrders.join.privacy') }}</div>
           </div>
@@ -109,6 +132,9 @@ import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import axios from 'axios';
 import type { GroupOrder } from 'src/types/groupOrder';
+import GroupOrderItems from 'src/components/GroupOrderItems.vue';
+import GroupOrderItemsEditor from 'src/components/GroupOrderItemsEditor.vue';
+import { cleanItems, newItem, urlValid } from 'src/utils/groupOrderItems';
 import { departmentLabel } from 'src/utils/departments';
 import { usePermissions } from 'src/composables/usePermissions';
 import { useConfirm, useConfirmRemove } from 'src/composables/useConfirmDialog';
@@ -131,7 +157,46 @@ const { confirmAction } = useConfirm();
 const order = ref<GroupOrder | null>(null);
 const loading = ref(false);
 const busy = ref(false);
-const join = ref({ name: '', contact: '', message: '' });
+const join = ref({ name: '', contact: '', message: '', items: [newItem()] });
+// Participant : modification de sa demande
+const editing = ref(false);
+const edit = ref({ message: '', items: [newItem()] });
+
+function startEdit() {
+  const mine = order.value?.members?.[0];
+  edit.value = {
+    message: mine?.message ?? '',
+    items: mine?.items?.length ? mine.items.map((i) => newItem(i)) : [newItem()],
+  };
+  editing.value = true;
+}
+
+/** Lignes prêtes à envoyer, ou null (avertissement affiché) si la saisie est incomplète. */
+function checkedItems(lines: typeof join.value.items) {
+  const items = cleanItems(lines);
+  if (!items.length) {
+    $q.notify({ type: 'warning', message: t('groupOrders.join.itemsRequired') });
+    return null;
+  }
+  if (lines.some((i) => !urlValid(i.url))) {
+    $q.notify({ type: 'warning', message: t('groupOrders.join.invalidUrl') });
+    return null;
+  }
+  return items;
+}
+
+async function saveEdit() {
+  const items = checkedItems(edit.value.items);
+  if (!items) return;
+  await run(async () => {
+    const { data } = await axios.patch<GroupOrder>(`/group-orders/${props.orderId}/join`, {
+      items,
+      message: edit.value.message.trim() || null,
+    });
+    editing.value = false;
+    return data;
+  }, t('groupOrders.requestSaved'));
+}
 
 const statusColor = computed(() =>
   order.value?.status === 'open' ? 'positive' : order.value?.status === 'closed' ? 'blue-grey-6' : 'grey-6',
@@ -139,6 +204,10 @@ const statusColor = computed(() =>
 
 async function load() {
   if (!props.orderId) return;
+  // Pseudo et contact gardés d'une annonce à l'autre, pas la demande
+  join.value.items = [newItem()];
+  join.value.message = '';
+  editing.value = false;
   loading.value = true;
   try {
     order.value = (await axios.get<GroupOrder>(`/group-orders/${props.orderId}`)).data;
@@ -170,6 +239,8 @@ async function sendJoin() {
     $q.notify({ type: 'warning', message: t('groupOrders.join.required') });
     return;
   }
+  const items = checkedItems(join.value.items);
+  if (!items) return;
   await run(
     async () =>
       (
@@ -177,6 +248,7 @@ async function sendJoin() {
           name: join.value.name.trim(),
           contact: join.value.contact.trim(),
           message: join.value.message.trim() || null,
+          items,
         })
       ).data,
     t('groupOrders.join.done'),

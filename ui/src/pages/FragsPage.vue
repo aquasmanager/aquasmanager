@@ -2,8 +2,9 @@
   <q-page class="app-page">
     <PageHeader icon="content_cut" :title="t('frags.title')" :subtitle="t('frags.subtitle')">
       <template #actions>
-        <q-btn v-if="canScan" outline color="primary" icon="qr_code_scanner" :label="t('frags.scan')" @click="scannerOpen = true" />
-        <q-btn outline color="primary" icon="qr_code_2" :label="t('frags.labels')" @click="labelsDialog = true" />
+        <q-btn v-if="canScan && can.bourse" outline color="primary" icon="qr_code_scanner" :label="t('frags.scan')" @click="scannerOpen = true" />
+        <!-- Étiquettes QR et scan : outils de vente en bourse (licence) -->
+        <q-btn v-if="can.bourse" outline color="primary" icon="qr_code_2" :label="t('frags.labels')" @click="labelsDialog = true" />
         <q-btn outline color="primary" icon="query_stats" :label="t('frags.stats')" @click="openStats" />
         <!-- Vente (vitrine, cessions) : licence « bourse » -->
         <q-btn v-if="can.sell" outline color="primary" icon="storefront" :label="t('frags.showcase')" @click="showcaseOpen = true">
@@ -187,7 +188,7 @@
       <q-card class="selection-bar row items-center no-wrap q-pa-sm gap-sm shadow-6">
         <q-btn flat round dense icon="close" color="grey-7" @click="selected.clear()" />
         <div class="text-weight-bold q-pr-sm">{{ t('frags.selection.batches', selected.size) }}</div>
-        <q-btn flat round dense color="primary" icon="qr_code_2" @click="labelsDialog = true">
+        <q-btn v-if="can.bourse" flat round dense color="primary" icon="qr_code_2" @click="labelsDialog = true">
           <q-tooltip>{{ t('frags.selection.labels') }}</q-tooltip>
         </q-btn>
         <q-btn v-if="can.frags" flat round dense color="primary" icon="move_down">

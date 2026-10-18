@@ -26,7 +26,9 @@ def test_status_and_bourse_locked_without_key(api, client):
         info = api.get("/license/")
         assert not info["valid"] and info["features"] == []
         # Vente (bourse) refusée (connecté ou public) ; gestion des boutures ouverte
-        for url in ("/transfer-certificates/", "/showcase/settings", "/seller-profile/", "/sale-locations/"):
+        # Étiquettes QR des boutures : outil de vente en bourse
+        for url in ("/transfer-certificates/", "/showcase/settings", "/seller-profile/", "/sale-locations/",
+                    "/frags/labels.pdf?base_url=https://aquas.example.org"):
             response = client.get(url, headers=api.headers)
             assert response.status_code == 403 and response.headers["X-Aquas-Feature"] == "bourse", url
         assert client.get("/public/showcase/").status_code == 403

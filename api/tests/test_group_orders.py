@@ -28,7 +28,7 @@ class FakeHub:
         order = self.orders[oid]
         if method == "GET":
             return self._detail(oid, token)
-        if method == "PATCH":
+        if method == "PATCH" and len(parts) == 1:
             if token != order["token"]:
                 raise HTTPException(status_code=403, detail="Seul l'organisateur.")
             order.update(json)
@@ -40,6 +40,12 @@ class FakeHub:
             pid = f"p{next(self.ids)}"
             order["members"].append({**json, "id": pid, "token": f"t-{pid}"})
             return {**self._detail(oid, f"t-{pid}"), "token": f"t-{pid}"}
+        if method == "PATCH" and parts[1] == "participants":
+            member = next(m for m in order["members"] if m["id"] == parts[2])
+            if token != member["token"]:
+                raise HTTPException(status_code=403, detail="Seul le participant.")
+            member.update(json)
+            return self._detail(oid, token)
         if method == "DELETE" and parts[1] == "participants":
             order["members"] = [m for m in order["members"] if m["id"] != parts[2]]
             return None
@@ -92,8 +98,17 @@ def test_group_order_flow(api, fake_hub):
     seen = api.get(f"/group-orders/{other['id']}")
     assert seen["contact"] is None and seen["my_role"] is None
 
-    joined = api.post(f"/group-orders/{other['id']}/join", {"name": "Manu", "contact": "06 00", "message": "2 clowns"},
-                      code=201)
+    items = [{"name": "Amphiprion ocellaris", "url": "https://example.org/clown", "quantity": 2}]
+    joined = api.post(f"/group-orders/{other['id']}/join",
+                      {"name": "Manu", "contact": "06 00", "message": "2 clowns", "items": items}, code=201)
+    # Les lignes d'articles sont transmises au hub
+    assert fake_hub.orders[other["id"]]["members"][0]["items"] == items
+    api.post(f"/group-orders/{other['id']}/join",
+             {"name": "Manu", "contact": "06 00", "items": [{"name": "X", "quantity": 0}]}, code=422)
+    # Demande modifiée après coup : articles ajoutés / retirés
+    more = items + [{"name": "Sel récifal 20 kg", "url": None, "quantity": 1}]
+    api.patch(f"/group-orders/{other['id']}/join", {"items": more, "message": None})
+    assert fake_hub.orders[other["id"]]["members"][0]["items"] == more
     assert joined["my_role"] == "participant" and joined["contact"] == "julie@example.org"
     api.post(f"/group-orders/{other['id']}/join", {"name": "Manu", "contact": "06 00"}, code=409)  # déjà inscrit
     api.patch(f"/group-orders/{other['id']}", {"status": "closed"}, code=403)  # pas l'organisateur

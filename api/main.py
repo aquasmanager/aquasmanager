@@ -162,6 +162,23 @@ def _apply_lightweight_migrations():
             with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE dashboard_cards MODIFY type ENUM({values}) NOT NULL"))
 
+    if "notification_settings" in tables:
+        existing_notify_columns = {col["name"] for col in inspector.get_columns("notification_settings")}
+        for column, ddl in (
+            ("email_enabled", "BOOLEAN NOT NULL DEFAULT 0"),
+            ("smtp_host", "VARCHAR(200)"),
+            ("smtp_port", "INTEGER NOT NULL DEFAULT 587"),
+            ("smtp_security", "VARCHAR(10) NOT NULL DEFAULT 'starttls'"),
+            ("smtp_user", "VARCHAR(200)"),
+            ("smtp_password", "VARCHAR(200)"),
+            ("email_from", "VARCHAR(200)"),
+            ("email_to", "VARCHAR(500)"),
+        ):
+            if column not in existing_notify_columns:
+                logger.info("Migration: ajout de la colonne notification_settings.%s", column)
+                with engine.begin() as conn:
+                    conn.execute(text(f"ALTER TABLE notification_settings ADD COLUMN {column} {ddl}"))
+
     if "water_parameter_readings" in tables:
         existing_reading_columns = {col["name"] for col in inspector.get_columns("water_parameter_readings")}
         if "icp_batch_id" not in existing_reading_columns:
@@ -629,6 +646,13 @@ def _apply_data_migrations():
             # « offline » publié par ESPHome à l'arrêt propre, enregistré tel quel : liste des contrôleurs en erreur
             if "controllers" in tables:
                 conn.execute(text("UPDATE controllers SET status = UPPER(status) WHERE status IN ('online', 'offline')"))
+            conn.execute(text("INSERT INTO schema_migrations (name, applied_at) VALUES (:n, CURRENT_TIMESTAMP)"), {"n": name})
+        name = "catalog_resync_adopt_local"
+        if conn.execute(text("SELECT 1 FROM schema_migrations WHERE name = :n"), {"n": name}).first() is None:
+            # Fiches locales homonymes désormais rattachées au catalogue commun : sans ETag, la
+            # prochaine synchronisation réapplique tout le catalogue au lieu de recevoir « 304 »
+            if "catalog_sync_state" in tables:
+                conn.execute(text("UPDATE catalog_sync_state SET etag = NULL"))
             conn.execute(text("INSERT INTO schema_migrations (name, applied_at) VALUES (:n, CURRENT_TIMESTAMP)"), {"n": name})
         name = "moonlight_per_channel"
         if conn.execute(text("SELECT 1 FROM schema_migrations WHERE name = :n"), {"n": name}).first() is None:

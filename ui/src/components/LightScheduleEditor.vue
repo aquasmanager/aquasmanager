@@ -19,7 +19,7 @@
     </template>
     <template v-if="light">
       <div>
-        <LightScheduleChart :channels="editedChannels" :now-minute="nowMinute()" :highlight-id="selectedId" :height="240" />
+        <LightScheduleChart :channels="editedChannels" :now-minute="currentMinute" :highlight-id="selectedId" :height="240" />
       </div>
 
       <!-- Profils -->
@@ -148,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import FormDialog from 'src/components/FormDialog.vue';
@@ -166,6 +166,15 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 const { t } = useI18n();
 const $q = useQuasar();
 const store = useLightStore();
+
+// Repère « maintenant » du graphique : avance tant que l'éditeur est ouvert
+const currentMinute = ref(nowMinute(store.timezone));
+let clock: ReturnType<typeof setInterval> | undefined;
+onMounted(() => {
+  clock = setInterval(() => (currentMinute.value = nowMinute(store.timezone)), 15000);
+});
+onBeforeUnmount(() => clearInterval(clock));
+
 const editedChannels = ref<LightChannel[]>([]);
 const selectedId = ref<number | null>(null);
 const dirty = ref(new Set<number>());
@@ -190,6 +199,7 @@ const selected = computed(() => editedChannels.value.find((c) => c.id === select
 const profileOptions = computed(() => store.profiles.map((p) => ({ label: p.label, value: p.key, description: p.description })));
 
 function reset() {
+  currentMinute.value = nowMinute(store.timezone);
   editedChannels.value = (props.light?.channels ?? []).map((ch) => ({ ...ch, schedule: ch.schedule.map((p) => ({ ...p })) }));
   selectedId.value = editedChannels.value[0]?.id ?? null;
   dirty.value = new Set();

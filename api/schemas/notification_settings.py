@@ -1,3 +1,4 @@
+import re
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -12,6 +13,14 @@ class NotificationSettingsRead(BaseModel):
     ntfy_url: str
     ntfy_topic: Optional[str] = None
     ntfy_token_set: bool
+    email_enabled: bool = False
+    smtp_host: Optional[str] = None
+    smtp_port: int = 587
+    smtp_security: Literal["starttls", "ssl", "none"] = "starttls"
+    smtp_user: Optional[str] = None
+    smtp_password_set: bool = Field(default=False, description="Un mot de passe SMTP est enregistré (jamais renvoyé)")
+    email_from: Optional[str] = None
+    email_to: Optional[str] = None
 
 
 class NotificationSettingsUpdate(BaseModel):
@@ -23,6 +32,23 @@ class NotificationSettingsUpdate(BaseModel):
     ntfy_url: Optional[str] = Field(default=None, max_length=300)
     ntfy_topic: Optional[str] = Field(default=None, max_length=100)
     ntfy_token: Optional[str] = Field(default=None, max_length=200)
+    email_enabled: Optional[bool] = None
+    smtp_host: Optional[str] = Field(default=None, max_length=200)
+    smtp_port: Optional[int] = Field(default=None, ge=1, le=65535)
+    smtp_security: Optional[Literal["starttls", "ssl", "none"]] = None
+    smtp_user: Optional[str] = Field(default=None, max_length=200)
+    smtp_password: Optional[str] = Field(default=None, max_length=200)
+    email_from: Optional[str] = Field(default=None, max_length=200)
+    email_to: Optional[str] = Field(default=None, max_length=500)
+
+    @field_validator("email_from", "email_to")
+    @classmethod
+    def check_addresses(cls, value: Optional[str]) -> Optional[str]:
+        for address in (value or "").replace(";", ",").split(","):
+            address = address.strip()
+            if address and not re.fullmatch(r"[^@\s<>,]+@[^@\s<>,]+\.[^@\s<>,]+", address):
+                raise ValueError(f"Adresse e-mail invalide : {address}")
+        return value
 
     @field_validator("ntfy_url")
     @classmethod
@@ -40,7 +66,7 @@ class NotificationSettingsUpdate(BaseModel):
 
 
 class NotificationTestRequest(BaseModel):
-    channel: Optional[Literal["telegram", "ntfy"]] = Field(
+    channel: Optional[Literal["telegram", "ntfy", "email"]] = Field(
         default=None, description="Canal à tester ; par défaut, le ou les canaux actifs"
     )
 

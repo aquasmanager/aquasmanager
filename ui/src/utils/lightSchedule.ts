@@ -65,8 +65,28 @@ export function parseTime(value: string): number | null {
   return h < 24 && m < 60 ? h * 60 + m : null;
 }
 
-export function nowMinute(): number {
+/**
+ * Minute de la journée maintenant, dans le fuseau des contrôleurs (celui du firmware) :
+ * un appareil réglé sur un autre fuseau (UTC d'un bureau distant...) afficherait sinon
+ * le repère « maintenant » décalé par rapport à ce que fait la rampe.
+ */
+export function nowMinute(timeZone?: string): number {
   const d = new Date();
+  if (timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23',
+      }).formatToParts(d);
+      const part = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+      return part('hour') * 60 + part('minute') + part('second') / 60;
+    } catch {
+      // Fuseau inconnu du navigateur : heure de l'appareil
+    }
+  }
   return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
 }
 

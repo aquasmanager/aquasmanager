@@ -217,7 +217,7 @@ const store = useLightStore();
 const controllerStore = useControllerStore();
 const wsStore = useWebSocketStore();
 
-const nowMinuteValue = ref(nowMinute());
+const nowMinuteValue = ref(nowMinute(store.timezone));
 const clock = ref(Date.now());
 const manualDraft = ref<Record<number, number>>({});
 // Démo simulée dans le navigateur (aperçu même si la lampe est hors ligne)
@@ -391,7 +391,7 @@ onMounted(async () => {
   ]);
   timer = setInterval(() => {
     clock.value = Date.now();
-    nowMinuteValue.value = nowMinute();
+    nowMinuteValue.value = nowMinute(store.timezone);
     for (const [id, demo] of Object.entries(localDemos.value)) {
       if (clock.value - demo.start >= demo.durationMs) delete localDemos.value[Number(id)];
     }

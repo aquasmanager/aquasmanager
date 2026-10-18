@@ -27,6 +27,7 @@ from schemas.frag import (
 )
 from services.cleanup import delete_photos
 from services.frag_labels import render_labels
+from services.license import require_feature
 from services.frags import attach_counts, frag_stats, log_movement, next_number, refresh_frag_status
 
 # Gestion des boutures ouverte à tous ; la vente (cessions, vitrine) relève de la bourse
@@ -77,7 +78,7 @@ def stats(group_by: str = Query("species", pattern="^(species|mother)$"), db: Se
     return frag_stats(db, group_by)
 
 
-@router.get("/labels.pdf")
+@router.get("/labels.pdf", dependencies=[Depends(require_feature("bourse"))])
 def labels(
     base_url: str = Query(..., pattern=r"^https?://", description="Adresse de l'appli (lien des QR codes)"),
     ids: Optional[str] = Query(None, description="Lots à imprimer (ex : 3,7,12) ; lots disponibles si absent"),

@@ -184,8 +184,10 @@ def _ensure_secret_key(conf: Settings) -> None:
         return
     key_file.parent.mkdir(parents=True, exist_ok=True)
     conf.secret_key = secrets.token_hex(32)
-    key_file.write_text(conf.secret_key)
-    key_file.chmod(0o600)
+    # Créé directement en 0600 : jamais lisible par d'autres, même un instant
+    fd = os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(conf.secret_key)
 
 
 def load_settings() -> Settings:

@@ -92,7 +92,7 @@
           </q-card-section>
           <q-card-section class="q-pt-none">
             <q-checkbox :model-value="true" disable :label="t('backup.databaseAlways')" />
-            <div v-for="part in BACKUP_PARTS" :key="part">
+            <div v-for="part in parts" :key="part">
               <q-checkbox v-model="form[`include_${part}`]" :label="partLabel(part)" />
               <div class="text-caption text-grey-7 part-caption">{{ t(`backup.parts.${part}.caption`) }}</div>
             </div>
@@ -128,6 +128,9 @@
                 <q-btn flat dense no-caps size="sm" color="primary" :label="t('backup.test')" :loading="testing" :disable="!form.external_path" @click="testDestination" />
               </template>
             </q-input>
+            <a :href="t('backup.nfsDocUrl')" target="_blank" rel="noopener noreferrer" class="text-caption text-primary row items-center no-wrap">
+              <q-icon name="menu_book" size="16px" class="q-mr-xs" />{{ t('backup.nfsDoc') }}<q-icon name="open_in_new" size="12px" class="q-ml-xs" />
+            </a>
             <div v-if="settings?.external_path && settings.external_ok === false" class="app-callout app-callout--danger text-caption">
               <q-icon name="error" size="18px" />
               <div>{{ settings.external_error }}</div>
@@ -214,7 +217,7 @@
       :loading="creating"
       @submit="runCustom"
     >
-      <div v-for="part in BACKUP_PARTS" :key="part">
+      <div v-for="part in parts" :key="part">
         <q-checkbox v-model="customParts" :val="part" :label="partLabel(part)" />
       </div>
       <q-option-group
@@ -258,6 +261,7 @@ import { apiErrorMessage } from 'src/utils/apiError';
 import { formatSize } from 'src/utils/documentFiles';
 import { formatDateTime } from 'src/utils/format';
 import { intlLocale } from 'src/i18n/instance';
+import { usePermissions } from 'src/composables/usePermissions';
 
 const $q = useQuasar();
 const i18n = useI18n();
@@ -279,7 +283,10 @@ const weekdays = computed(() =>
 const PART_ICONS: Record<string, string> = { photos: 'photo_library', icp: 'science', documents: 'folder_shared', certificates: 'description' };
 const LABEL_TAGS: Record<string, string> = { auto: 'app-tag--teal', imported: 'app-tag--warn', before_restore: 'app-tag--danger' };
 const NFS_EXAMPLE = '/backups-nfs'; // i18n-ignore : exemple de chemin
+const can = usePermissions();
 const RESTORABLE: BackupPart[] = ['photos', 'icp', 'documents'];
+// Certificats de cession : partie pro (bourse), proposés seulement avec la licence
+const parts = computed(() => BACKUP_PARTS.filter((p) => p !== 'certificates' || can.bourse));
 
 const columns = computed(() => [
   { name: 'created_at', label: t('backup.columns.date'), field: 'created_at', align: 'left' as const, sortable: true },
@@ -382,7 +389,7 @@ async function createNow(parts?: BackupPart[], location?: BackupLocation) {
 
 function openCustom(mode: 'create' | 'export') {
   customMode.value = mode;
-  customParts.value = BACKUP_PARTS.filter((p) => form.value[`include_${p}`]);
+  customParts.value = parts.value.filter((p) => form.value[`include_${p}`]);
   customLocation.value = settings.value?.destination === 'external' && settings.value.external_ok ? 'external' : 'local';
   customDialog.value = true;
 }

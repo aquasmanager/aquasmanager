@@ -92,6 +92,56 @@
             </q-card-actions>
           </q-card>
         </div>
+
+        <div class="col-12">
+          <q-card flat bordered :class="{ 'channel-off': !form.email_enabled }">
+            <q-card-section class="row items-center justify-between">
+              <div class="text-subtitle1 text-weight-bold row items-center">
+                <q-icon name="mail" color="primary" class="q-mr-sm" />{{ t('notifSettings.email.title') }}
+              </div>
+              <q-badge :color="form.email_enabled ? 'positive' : 'grey-5'" :label="form.email_enabled ? t('notifSettings.active') : t('notifSettings.inactive')" />
+            </q-card-section>
+            <q-card-section class="q-pt-none">
+              <q-toggle v-model="form.email_enabled" :label="t('notifSettings.email.enable')" />
+              <div class="text-caption text-grey-7 q-mb-md">{{ t('notifSettings.email.intro') }}</div>
+              <div class="row q-col-gutter-md">
+                <div class="col-12 col-sm-6">
+                  <q-input v-model="form.smtp_host" :label="t('notifSettings.email.host')" :placeholder="SMTP_EXAMPLES.host" outlined dense />
+                </div>
+                <div class="col-6 col-sm-3">
+                  <q-select v-model="form.smtp_security" :options="securityOptions" emit-value map-options :label="t('notifSettings.email.security')" outlined dense @update:model-value="onSecurity" />
+                </div>
+                <div class="col-6 col-sm-3">
+                  <q-input v-model.number="form.smtp_port" type="number" min="1" max="65535" :label="t('notifSettings.email.port')" outlined dense />
+                </div>
+                <div class="col-12 col-sm-6">
+                  <q-input v-model="form.smtp_user" :label="t('notifSettings.email.user')" autocomplete="off" outlined dense />
+                </div>
+                <div class="col-12 col-sm-6">
+                  <q-input
+                    v-model="form.smtp_password"
+                    :label="t('notifSettings.email.password')"
+                    type="password"
+                    autocomplete="new-password"
+                    outlined
+                    dense
+                    :placeholder="current?.smtp_password_set ? t('notifSettings.saved') : ''"
+                    :hint="t('notifSettings.email.passwordHint')"
+                  />
+                </div>
+                <div class="col-12 col-sm-6">
+                  <q-input v-model="form.email_from" type="email" :label="t('notifSettings.email.from')" :hint="t('notifSettings.email.fromHint')" outlined dense />
+                </div>
+                <div class="col-12 col-sm-6">
+                  <q-input v-model="form.email_to" :label="t('notifSettings.email.to')" :placeholder="SMTP_EXAMPLES.to" :hint="t('notifSettings.email.toHint')" outlined dense />
+                </div>
+              </div>
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-btn flat color="primary" icon="notifications" :label="t('notifSettings.test', { channel: t('notifSettings.email.title') })" :loading="testing === 'email'" @click="test('email')" />
+            </q-card-actions>
+          </q-card>
+        </div>
       </div>
 
       <div class="row items-center justify-between q-mt-md">
@@ -99,6 +149,7 @@
         <div class="q-gutter-sm">
           <q-btn v-if="current?.telegram_bot_token_set" flat color="negative" :label="t('notifSettings.clearToken', { channel: 'Telegram' })" @click="clearSecret('telegram_bot_token')" />
           <q-btn v-if="current?.ntfy_token_set" flat color="negative" :label="t('notifSettings.clearToken', { channel: 'ntfy' })" @click="clearSecret('ntfy_token')" />
+          <q-btn v-if="current?.smtp_password_set" flat color="negative" :label="t('notifSettings.email.clearPassword')" @click="clearSecret('smtp_password')" />
           <q-btn unelevated color="primary" icon="save" :label="t('common.save')" :loading="saving" @click="save()" />
         </div>
       </div>
@@ -114,7 +165,8 @@ import { useI18n } from 'vue-i18n';
 import PageHeader from 'src/components/PageHeader.vue';
 
 type Provider = 'none' | 'telegram' | 'ntfy' | 'both';
-type Channel = 'telegram' | 'ntfy';
+type Channel = 'telegram' | 'ntfy' | 'email';
+type SmtpSecurity = 'starttls' | 'ssl' | 'none';
 
 interface NotificationSettings {
   provider: Provider;
@@ -123,10 +175,28 @@ interface NotificationSettings {
   ntfy_url: string;
   ntfy_topic: string | null;
   ntfy_token_set: boolean;
+  email_enabled: boolean;
+  smtp_host: string | null;
+  smtp_port: number;
+  smtp_security: SmtpSecurity;
+  smtp_user: string | null;
+  smtp_password_set: boolean;
+  email_from: string | null;
+  email_to: string | null;
 }
 
 // Exemples de format de jeton (non traduits)
 const TOKEN_EXAMPLES = { telegram: '123456:ABC...', ntfy: 'tk_...' }; // i18n-ignore
+const SMTP_EXAMPLES = { host: 'smtp.gmail.com', to: 'moi@example.org' }; // i18n-ignore
+const SMTP_PORTS: Record<SmtpSecurity, number> = { starttls: 587, ssl: 465, none: 25 };
+const securityOptions = computed(() =>
+  (['starttls', 'ssl', 'none'] as const).map((value) => ({ label: t(`notifSettings.email.${value}`), value })),
+);
+
+// Port par défaut de la sécurité choisie, si le port saisi était celui d'une autre
+function onSecurity(security: SmtpSecurity) {
+  if (Object.values(SMTP_PORTS).includes(Number(form.value.smtp_port))) form.value.smtp_port = SMTP_PORTS[security];
+}
 
 const $q = useQuasar();
 const { t } = useI18n();
@@ -147,6 +217,14 @@ const form = ref<{
   ntfy_url: string;
   ntfy_topic: string;
   ntfy_token: string;
+  email_enabled: boolean;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_security: SmtpSecurity;
+  smtp_user: string;
+  smtp_password: string;
+  email_from: string;
+  email_to: string;
 }>({
   provider: 'none',
   telegram_bot_token: '',
@@ -154,6 +232,14 @@ const form = ref<{
   ntfy_url: 'https://ntfy.sh',
   ntfy_topic: '',
   ntfy_token: '',
+  email_enabled: false,
+  smtp_host: '',
+  smtp_port: 587,
+  smtp_security: 'starttls',
+  smtp_user: '',
+  smtp_password: '',
+  email_from: '',
+  email_to: '',
 });
 
 function errorDetail(err: unknown, fallback: string): string {
@@ -172,6 +258,14 @@ function applyServer(data: NotificationSettings) {
     ntfy_url: data.ntfy_url,
     ntfy_topic: data.ntfy_topic ?? '',
     ntfy_token: '',
+    email_enabled: data.email_enabled,
+    smtp_host: data.smtp_host ?? '',
+    smtp_port: data.smtp_port,
+    smtp_security: data.smtp_security,
+    smtp_user: data.smtp_user ?? '',
+    smtp_password: '',
+    email_from: data.email_from ?? '',
+    email_to: data.email_to ?? '',
   };
 }
 
@@ -205,6 +299,14 @@ async function save(notifySuccess = true): Promise<boolean> {
       telegram_chat_id: f.telegram_chat_id,
       ntfy_url: f.ntfy_url,
       ntfy_topic: f.ntfy_topic,
+      email_enabled: f.email_enabled,
+      smtp_host: f.smtp_host,
+      smtp_port: Number(f.smtp_port) || SMTP_PORTS[f.smtp_security],
+      smtp_security: f.smtp_security,
+      smtp_user: f.smtp_user,
+      email_from: f.email_from,
+      email_to: f.email_to,
+      ...(f.smtp_password ? { smtp_password: f.smtp_password } : {}),
       // Jeton vide = inchangé (jamais renvoyé par l'API)
       ...(f.telegram_bot_token ? { telegram_bot_token: f.telegram_bot_token } : {}),
       ...(f.ntfy_token ? { ntfy_token: f.ntfy_token } : {}),
@@ -220,11 +322,11 @@ async function save(notifySuccess = true): Promise<boolean> {
   }
 }
 
-async function clearSecret(field: 'telegram_bot_token' | 'ntfy_token') {
+async function clearSecret(field: 'telegram_bot_token' | 'ntfy_token' | 'smtp_password') {
   try {
     const { data } = await axios.put<NotificationSettings>('/notification-settings/', { [field]: '' });
     applyServer(data);
-    $q.notify({ type: 'positive', message: t('notifSettings.tokenCleared') });
+    $q.notify({ type: 'positive', message: t(field === 'smtp_password' ? 'notifSettings.email.passwordCleared' : 'notifSettings.tokenCleared') });
   } catch (err) {
     $q.notify({ type: 'negative', message: errorDetail(err, t('notifSettings.failed')) });
   }
@@ -237,10 +339,11 @@ async function test(channel: Channel) {
     if (!(await save(false))) return;
     const { data } = await axios.post<{ results: Record<string, string | null> }>('/notification-settings/test', { channel });
     const error = data.results[channel];
+    const name = channel === 'email' ? t('notifSettings.email.title') : channel;
     $q.notify(
       error
-        ? { type: 'negative', message: t('notifSettings.testFailedOn', { channel, error }), timeout: 8000 }
-        : { type: 'positive', message: t('notifSettings.testSent', { channel }) },
+        ? { type: 'negative', message: t('notifSettings.testFailedOn', { channel: name, error }), timeout: 8000 }
+        : { type: 'positive', message: t('notifSettings.testSent', { channel: name }) },
     );
   } catch (err) {
     $q.notify({ type: 'negative', message: errorDetail(err, t('notifSettings.testFailed')) });

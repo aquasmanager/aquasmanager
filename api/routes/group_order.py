@@ -51,10 +51,24 @@ class OrderUpdate(BaseModel):
     status: Optional[Literal["open", "closed", "cancelled"]] = None
 
 
+class JoinItem(BaseModel):
+    """Une ligne de la demande : corail / produit, lien direct chez le magasin, quantité."""
+
+    name: str = Field(min_length=1, max_length=120)
+    url: Optional[str] = Field(default=None, max_length=300)
+    quantity: int = Field(default=1, ge=1, le=99)
+
+
 class JoinIn(BaseModel):
     name: str = Field(min_length=2, max_length=40)
     contact: str = Field(min_length=3, max_length=120)
     message: Optional[str] = Field(default=None, max_length=1000)
+    items: list[JoinItem] = Field(default_factory=list, max_length=30)
+
+
+class JoinUpdate(BaseModel):
+    message: Optional[str] = Field(default=None, max_length=1000)
+    items: Optional[list[JoinItem]] = Field(default=None, max_length=30)
 
 
 def _with_role(order: dict, db: Session) -> dict:
@@ -162,6 +176,17 @@ def join(hub_id: str, payload: JoinIn, db: Session = Depends(get_db)):
     db.add(GroupOrderLink(hub_id=hub_id, role="participant", token=order.pop("token"),
                           participant_id=order["members"][0]["id"], title=order["title"]))
     db.commit()
+    return {**order, "my_role": "participant"}
+
+
+@router.patch("/{hub_id}/join", dependencies=WRITE)
+def update_join(hub_id: str, payload: JoinUpdate, db: Session = Depends(get_db)):
+    """Modifier sa demande (articles, remarque) tant que la commande est ouverte."""
+    link = go.link_for(db, hub_id)
+    if link is None or link.role != "participant":
+        raise HTTPException(status_code=404, detail="Tu ne participes pas à cette commande groupée.")
+    order = go.hub("PATCH", f"/{hub_id}/participants/{link.participant_id}", token=link.token,
+                   json=payload.model_dump(mode="json", exclude_unset=True))
     return {**order, "my_role": "participant"}
 
 

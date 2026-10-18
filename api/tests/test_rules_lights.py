@@ -482,3 +482,10 @@ def test_channel_min_threshold_reaches_firmware_without_reflash(api, aquarium, c
     assert f"if (v < id({lid}_min{cid})) v = 0.0f;" in firmware
     assert f'id({lid}_min{cid}) = c["min"] | id({lid}_min{cid});' in firmware
     assert "interval: 500ms" in firmware
+
+
+def test_catalog_gives_controller_timezone(api):
+    """Repère « maintenant » des graphiques : même fuseau que le firmware, pas celui de l'appareil."""
+    from services.esphome_generator import TIMEZONE
+
+    assert api.get("/lights/catalog")["timezone"] == TIMEZONE == "Europe/Paris"

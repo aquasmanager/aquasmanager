@@ -31,6 +31,7 @@ from schemas.water_parameter import (
 from services.parameter_trends import trends_for_aquarium
 from services.icp_import import parse_icp_report
 from services.water_parameter_defaults import TARGET_DEFAULTS, default_target_for, full_name_for
+from utils.safe_path import safe_join
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ ICP_PDF_MAX_BYTES = 20 * 1024 * 1024
 
 
 def _icp_pdf_path(batch_id: int) -> str:
-    return os.path.join(ICP_PDF_DIR, f"{batch_id}.pdf")
+    return safe_join(ICP_PDF_DIR, f"{batch_id}.pdf")
 
 router = APIRouter(
     prefix="/water-parameters", tags=["Water Parameters"], dependencies=[Depends(min_role_required("consult"))]

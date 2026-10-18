@@ -28,7 +28,7 @@ from models.coral import Coral
 from models.fish import Fish
 from models.invertebrate import Invertebrate
 from models.purchase_document import PurchaseDocument, PurchaseDocumentFile, PurchaseDocumentLink
-from services.cites_links import join_numbers, link_corals_to_document, normalize, split_numbers
+from services.cites_links import fill_corals_from_document, join_numbers, link_corals_to_document, normalize, split_numbers
 import json
 
 from models.coral import Coral as CoralModel
@@ -42,6 +42,7 @@ from schemas.purchase_document import (
     PurchaseDocumentRead,
     PurchaseDocumentUpdate,
 )
+from utils.safe_path import safe_join
 
 router = APIRouter(
     prefix="/purchase-documents", tags=["purchase documents"], dependencies=[Depends(min_role_required("consult"))]
@@ -90,6 +91,15 @@ def _species_map(document: PurchaseDocument) -> dict[str, int]:
     except ValueError:
         return {}
     return {k: int(v) for k, v in data.items() if str(v).isdigit()} if isinstance(data, dict) else {}
+
+
+def _species_scientific_names(db: Session, document: PurchaseDocument) -> dict[str, str]:
+    """Numéro normalisé → nom scientifique de l'espèce associée (recopie du numéro sur un corail)."""
+    species = _species_map(document)
+    if not species:
+        return {}
+    names = {s.id: s.scientific_name for s in db.query(CoralSpecies).filter(CoralSpecies.id.in_(set(species.values())))}
+    return {number: names.get(species_id, "") for number, species_id in species.items()}
 
 
 def _cites_entries(document: PurchaseDocument, names: dict[int, str]) -> list[dict]:
@@ -259,7 +269,7 @@ def get_document(document_id: int, db: Session = Depends(get_db)):
 
 
 def _file_path(document_id: int, filename: str) -> str:
-    return os.path.join(STORAGE_ROOT, str(document_id), filename)
+    return safe_join(STORAGE_ROOT, str(document_id), filename)
 
 
 @router.get("/{document_id}/files/{file_id}")
@@ -326,6 +336,8 @@ def create_document(payload: PurchaseDocumentCreate, db: Session = Depends(get_d
     db.add(document)
     _set_links(db, document, payload.links)
     auto_linked = link_corals_to_document(db, document, split_numbers(document.cites_number))
+    db.flush()
+    fill_corals_from_document(db, document, _species_scientific_names(db, document))
     db.commit()
     db.refresh(document)
     return {**_read([document], db)[0], "auto_linked": auto_linked}
@@ -359,6 +371,8 @@ def update_document(document_id: int, payload: PurchaseDocumentUpdate, db: Sessi
         # Seuls les numéros ajoutés lient des coraux : un lien retiré à la main ne revient pas
         added = [n for n in split_numbers(numbers) if normalize(n) not in before]
         auto_linked = link_corals_to_document(db, document, added)
+    db.flush()
+    fill_corals_from_document(db, document, _species_scientific_names(db, document))
     db.commit()
     db.refresh(document)
     return {**_read([document], db)[0], "auto_linked": auto_linked}
@@ -367,7 +381,7 @@ def update_document(document_id: int, payload: PurchaseDocumentUpdate, db: Sessi
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=WRITE)
 def delete_document(document_id: int, db: Session = Depends(get_db)):
     document = _get_or_404(db, document_id)
-    folder = os.path.join(STORAGE_ROOT, str(document.id))
+    folder = safe_join(STORAGE_ROOT, str(document.id))
     db.delete(document)
     db.commit()
     shutil.rmtree(folder, ignore_errors=True)
@@ -394,7 +408,7 @@ def upload_files(document_id: int, files: List[UploadFile] = File(...), db: Sess
     document = _get_or_404(db, document_id)
     if len(document.files) + len(files) > MAX_FILES_PER_DOCUMENT:
         raise HTTPException(status_code=400, detail=f"{MAX_FILES_PER_DOCUMENT} fichiers au plus par document.")
-    folder = os.path.join(STORAGE_ROOT, str(document.id))
+    folder = safe_join(STORAGE_ROOT, str(document.id))
     os.makedirs(folder, exist_ok=True)
     added: list[PurchaseDocumentFile] = []
     written_paths: list[str] = []
@@ -416,7 +430,7 @@ def _store_files(document, files, folder, added, written_paths) -> None:
         head = upload.file.read(16)
         ext, content_type = _checked_extension(upload, head)
         filename = f"{uuid.uuid4().hex}{ext}"
-        path = os.path.join(folder, filename)
+        path = safe_join(STORAGE_ROOT, str(document.id), filename)
         written_paths.append(path)
         written = len(head)
         with open(path, "wb") as out:
@@ -481,10 +495,10 @@ def scan_to_pdf(
     if buffer.tell() > MAX_FILE_BYTES:
         raise HTTPException(status_code=413, detail="Le PDF dépasse 20 Mo : moins de pages, ou des photos plus légères.")
 
-    folder = os.path.join(STORAGE_ROOT, str(document.id))
+    folder = safe_join(STORAGE_ROOT, str(document.id))
     os.makedirs(folder, exist_ok=True)
     filename = f"{uuid.uuid4().hex}.pdf"
-    with open(os.path.join(folder, filename), "wb") as out:
+    with open(safe_join(STORAGE_ROOT, str(document.id), filename), "wb") as out:
         out.write(buffer.getvalue())
     label = re.sub(r"[\\/:*?\"<>|]+", "-", (name or "").strip()) or f"scan-{datetime.now():%Y%m%d-%H%M}"
     record = PurchaseDocumentFile(

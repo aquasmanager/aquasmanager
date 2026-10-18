@@ -67,6 +67,8 @@ _ALLOWED = [
     # État de l'assistant (lu à l'ouverture de l'appli : « indisponible »)
     ("GET", re.compile(r"^/assistant/status/?$")),
     ("PUT", re.compile(r"^/me/language/?$")),
+    # Commandes groupées : choisir ses départements (annonces d'exemple, voir demo_group_orders_hub)
+    ("PUT", re.compile(r"^/group-orders/settings/?$")),
 ]
 
 BLOCKED_DETAIL = "Indisponible dans la démo : installe AquasManager chez toi pour l'utiliser."
@@ -425,6 +427,7 @@ def seed(api: _Api) -> dict:
                         data={"taken_at": _days_ago(95, hour=20)})
 
     _purchase_documents(api, corals, fishes)
+    _frags(api, corals)
 
     # Entretien et stock
     tomorrow = (datetime.now() + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
@@ -459,6 +462,7 @@ def seed(api: _Api) -> dict:
                                    "icon": "thermostat", "sensor_id": temp_planted["id"], "unit": "°C",
                                    "period": "24h", "target_min": 23.5, "target_max": 26})
     _journal(api, reef, planted)
+    _group_order_links()
     return {"reef": reef, "planted": planted, "controller": ctrl}
 
 
@@ -536,6 +540,114 @@ def _purchase_documents(api: _Api, corals: dict, fishes: dict) -> None:
         "Facture AN-55321", "Aqua Nature",
         [("Amphiprion ocellaris x2 (élevage)", "-", "58,00 EUR"), ("Zebrasoma flavescens", "-", "89,00 EUR")],
         "Document fictif créé pour la démonstration d'AquasManager."), "application/pdf")])
+
+
+def _frags(api: _Api, corals: dict) -> None:
+    """Deux lots de boutures détachés des pieds mères du récif, prêts pour une bourse."""
+    for key, quantity, price, days, note in (
+        ("acropora", 3, 25, 24, "Bouturé à la pince, collé sur plug céramique"),
+        ("zoanthus", 6, 10, 10, "Polypes séparés en petits rochers"),
+    ):
+        frag = api.post("/frags/", {"mother_coral_id": corals[key]["id"], "quantity": quantity, "price": price,
+                                    "cut_date": _days_ago(days)[:10], "notes": note})
+        path = PHOTOS_DIR / f"{key}.jpg"
+        if path.exists():
+            api.upload(f"/photos/frags/{frag['id']}", "file", [(path.name, path.read_bytes(), "image/jpeg")])
+
+
+# --- Commandes groupées d'exemple ---
+# Les vraies annonces vivent sur le hub de l'éditeur, partagé par toutes les
+# installations : la démo n'y écrit jamais. Elle sert ces exemples à la place,
+# dans le premier département suivi.
+
+DEMO_DEPARTMENT = "35"
+_OWNER_TOKEN = "demo-organisateur"
+_MEMBER_TOKEN = "demo-participant"
+_DEMO_ORDERS = [
+    {"id": "demo-coraux", "title": "Coraux de mariculture : envoi groupé", "shop": "Récif Passion (exemple)",
+     "area": "Rennes", "days": 12, "organizer": "Démo",
+     "description": "Franco de port à 300 € : on partage les frais d'envoi. Boutures SPS et LPS, "
+                    "livraison chez moi puis remise en main propre.",
+     "members": [("Camille", "camille@example.org", "Merci pour l'organisation !",
+                  [("Acropora tenuis (bouture)", 2), ("Euphyllia paraancora (tête)", 1)]),
+                 ("Léo", "06 00 00 00 00", None, [("Zoanthus Utter Chaos (lot)", 1)])]},
+    {"id": "demo-sel", "title": "Sel et additifs en seaux de 25 kg", "shop": "Aqua Fournitures (exemple)",
+     "area": "Saint-Malo", "days": 6, "organizer": "Camille",
+     "description": "Remise à partir de 10 seaux de sel. Retrait chez moi le samedi.",
+     "members": [("Démo", "demo@example.org", None, [("Sel récifal, seau de 25 kg", 1), ("Additif KH 1 L", 2)])]},
+    {"id": "demo-plantes", "title": "Plantes in vitro pour bacs plantés", "shop": "Jardin Aquatique (exemple)",
+     "area": "Vitré", "days": 20, "organizer": "Léo",
+     "description": "Commande de plantes in vitro, minimum 15 pots pour l'envoi gratuit.",
+     "members": [("Sacha", "sacha@example.org", "Pour un 120 L planté", [("Monte Carlo in vitro", 3)])]},
+]
+
+
+def _order_public(order: dict, department: str) -> dict:
+    created = datetime.now() - timedelta(days=3)
+    return {"id": order["id"], "title": order["title"], "shop": order["shop"], "shop_url": None,
+            "department": department, "area": order["area"],
+            "deadline": (datetime.now() + timedelta(days=order["days"])).date().isoformat(),
+            "organizer": order["organizer"], "description": order["description"], "status": "open",
+            "participants": len(order["members"]), "created_at": created.isoformat()}
+
+
+def _members(order: dict) -> list[dict]:
+    return [{"id": f"{order['id']}-{i}", "name": name, "contact": contact, "message": message,
+             "items": [{"name": item, "url": None, "quantity": quantity} for item, quantity in items],
+             "created_at": (datetime.now() - timedelta(days=2, hours=i)).isoformat()}
+            for i, (name, contact, message, items) in enumerate(order["members"])]
+
+
+def demo_group_orders_hub(method: str, path: str, token: Optional[str] = None, **kwargs):
+    """Remplace le hub dans la démo : annonces d'exemple, en lecture seule."""
+    from fastapi import HTTPException
+
+    if method != "GET":
+        raise HTTPException(status_code=403, detail=BLOCKED_DETAIL)
+    if path == "":
+        wanted = [d for d in str((kwargs.get("params") or {}).get("departments", "")).split(",") if d]
+        return [_order_public(o, wanted[0]) for o in _DEMO_ORDERS] if wanted else []
+    order = next((o for o in _DEMO_ORDERS if path == f"/{o['id']}"), None)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Commande groupée introuvable.")
+    db = SessionLocal()
+    try:
+        from models.group_order import GroupOrderSettings
+
+        conf = db.get(GroupOrderSettings, 1)
+        department = (conf.departments or [DEMO_DEPARTMENT])[0] if conf else DEMO_DEPARTMENT
+    finally:
+        db.close()
+    result = {**_order_public(order, department), "role": None, "contact": None, "members": []}
+    members = _members(order)
+    if token == _OWNER_TOKEN and order["organizer"] == "Démo":
+        result.update(role="owner", contact="demo@example.org", members=members)
+    elif token == _MEMBER_TOKEN:
+        mine = [m for m in members if m["name"] == "Démo"]
+        if mine:
+            result.update(role="participant", contact=f"{order['organizer'].lower()}@example.org", members=mine)
+    return result
+
+
+def _group_order_links() -> None:
+    """Département suivi, une annonce organisée et une commande rejointe (« Mes commandes »)."""
+    from models.group_order import GroupOrderLink, GroupOrderSettings
+
+    db = SessionLocal()
+    try:
+        conf = db.get(GroupOrderSettings, 1) or GroupOrderSettings(id=1)
+        conf.departments = [DEMO_DEPARTMENT]
+        conf.seen_ids = [o["id"] for o in _DEMO_ORDERS]
+        db.merge(conf)
+        db.add_all([
+            GroupOrderLink(hub_id="demo-coraux", role="owner", token=_OWNER_TOKEN, title=_DEMO_ORDERS[0]["title"],
+                           known_members=len(_DEMO_ORDERS[0]["members"])),
+            GroupOrderLink(hub_id="demo-sel", role="participant", token=_MEMBER_TOKEN, participant_id="demo-sel-0",
+                           title=_DEMO_ORDERS[1]["title"]),
+        ])
+        db.commit()
+    finally:
+        db.close()
 
 
 def _journal(api: _Api, reef: dict, planted: dict) -> None:

@@ -150,6 +150,8 @@ class ProfileRead(BaseModel):
 class LightCatalogRead(BaseModel):
     spectra: List[SpectrumRead]
     profiles: List[ProfileRead]
+    # Fuseau horaire des contrôleurs (firmware) : repère « maintenant » des graphiques
+    timezone: str
 
 
 class LightDemoRead(BaseModel):

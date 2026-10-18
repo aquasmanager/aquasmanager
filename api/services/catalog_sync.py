@@ -7,7 +7,11 @@ régulièrement et l'applique :
 
 - espèce absente (par nom commun, sans tenir compte de la casse) : ajoutée ;
 - fiche du catalogue commun (builtin) jamais modifiée ici : mise à jour ;
-- fiche modifiée ici (customized) ou créée par l'utilisateur : jamais touchée ;
+- fiche modifiée ici (customized) : jamais touchée ;
+- fiche créée par l'utilisateur sous le même nom (typiquement sa proposition,
+  acceptée et corrigée par l'éditeur) : rattachée au catalogue commun et mise à
+  jour, les champs que le catalogue laisse vides (notes, lien...) gardant leur
+  valeur locale ;
 - fiche masquée (supprimée par l'utilisateur) : reste masquée ;
 - espèce renommée : retrouvée par ses anciens noms (« previous_names ») ;
 - une espèce retirée du catalogue reste dans les installations.
@@ -51,10 +55,13 @@ def _plain(value: Any) -> Any:
 class SyncResult:
     added: list[str] = field(default_factory=list)
     updated: list[str] = field(default_factory=list)
+    adopted: list[str] = field(default_factory=list)
     invalid: list[str] = field(default_factory=list)
 
     def summary(self) -> str:
         parts = [f"{len(self.added)} ajoutée(s)", f"{len(self.updated)} mise(s) à jour"]
+        if self.adopted:
+            parts.append(f"{len(self.adopted)} rattachée(s) au catalogue")
         if self.invalid:
             parts.append(f"{len(self.invalid)} ignorée(s) (fiche invalide)")
         return ", ".join(parts)
@@ -92,7 +99,19 @@ def apply_catalog(db: Session, catalog: dict) -> SyncResult:
                 by_name[_key(values["common_name"])] = row
                 result.added.append(values["common_name"])
                 continue
-            if not row.builtin or row.customized:
+            if not row.builtin:
+                # Fiche locale homonyme : rattachée au catalogue commun, valeurs du catalogue
+                # sauf là où il n'en donne pas (notes, lien... saisis localement)
+                for name, value in values.items():
+                    if value is None and getattr(row, name) not in (None, ""):
+                        continue
+                    setattr(row, name, value)
+                row.builtin = True
+                row.customized = False
+                by_name[_key(values["common_name"])] = row
+                result.adopted.append(values["common_name"])
+                continue
+            if row.customized:
                 continue
             changed = False
             for name, value in values.items():
@@ -143,7 +162,7 @@ def sync_catalog(db: Session, force: bool = False, client: Optional[httpx.Client
         state.applied_at = datetime.now()
         state.result = result.summary()
         state.error = None
-        if result.added or result.updated:
+        if result.added or result.updated or result.adopted:
             logger.info("Catalogue commun : %s", state.result)
         if result.invalid:
             logger.warning("Catalogue commun : fiches ignorées %s", ", ".join(result.invalid))

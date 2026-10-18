@@ -30,9 +30,11 @@ def test_apply_adds_updates_and_spares_local_changes(api, uid):
         api.patch(f"/species/corals/{modified.id}", {"notes": "Ma remarque"})
         db.expire_all()
         assert _get(db, f"Modif {uid}").customized
-        # Fiche créée par l'utilisateur sous un nom pris ensuite par le catalogue : jamais touchée
+        # Fiche créée par l'utilisateur (sa proposition, acceptée puis corrigée par l'éditeur)
         personal = _get(db, f"Perso {uid}")
         personal.builtin = False
+        personal.type = "SPS"
+        personal.notes = "Achetée en bourse"
         db.commit()
 
         result = apply_catalog(db, {"format": 1, "corals": [
@@ -46,10 +48,14 @@ def test_apply_adds_updates_and_spares_local_changes(api, uid):
         # Même fiche (nom retrouvé sans casse ni espaces), valeurs et nom du catalogue appliqués
         refreshed = db.get(CoralSpecies, added_id)
         assert refreshed.light_max == 10 and refreshed.common_name == f"ajout  {uid}"
-        assert _get(db, f"Perso {uid}").light_max == 8
+        # ... rattachée au catalogue : ses valeurs, notes locales gardées (le catalogue n'en a pas)
+        personal = _get(db, f"Perso {uid}")
+        assert personal.builtin and not personal.customized
+        assert personal.light_max == 10 and personal.type.value == "LPS" and personal.notes == "Achetée en bourse"
         assert _get(db, f"Modif {uid}").light_max == 8 and _get(db, f"Modif {uid}").notes == "Ma remarque"
         assert _get(db, f"Nouveau {uid}").builtin
         assert result.updated == [f"ajout  {uid}"] and result.added == [f"Nouveau {uid}"]
+        assert result.adopted == [f"Perso {uid}"]
         assert result.invalid == [f"corals:Invalide {uid}"]
     finally:
         db.close()
