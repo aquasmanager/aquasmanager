@@ -17,6 +17,7 @@
 #   --plain           questions en texte simple (sans fenêtres whiptail)
 #   --dry-run         écrit seulement les fichiers (ni root, ni Docker)
 #   --reconfigure     reprendre une installation existante
+#   --cli-only        réécrire seulement la commande « aquasmanager » (appelé par « update »)
 #   -h, --help        cette aide
 # =============================================================================
 set -Eeuo pipefail
@@ -36,6 +37,7 @@ ASSUME_YES=false
 PLAIN=false
 DRY_RUN=false
 RECONFIGURE=false
+CLI_ONLY=false
 
 # --- Affichage ---------------------------------------------------------------
 
@@ -64,6 +66,7 @@ while [ $# -gt 0 ]; do
     --plain) PLAIN=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     --reconfigure) RECONFIGURE=true; shift ;;
+    --cli-only) CLI_ONLY=true; ASSUME_YES=true; shift ;;
     -h | --help) usage; exit 0 ;;
     *) die "Option inconnue : $1 (voir --help)" ;;
   esac
@@ -393,8 +396,15 @@ ask_questions() {
   # shellcheck disable=SC2034  # lue par write_files (aquasmanager.conf, via ${!name})
   COMPONENTS="$SELECTED"
 
+  local default_ip="${ANSWER_SERVER_IP:-$detected_ip}"
+  # Reprise interactive (pas de fichier de réponses imposé) : IP changée depuis l'installation
+  if ! $ASSUME_YES && [ -z "$ANSWERS_FILE" ] && [ -n "${ANSWER_SERVER_IP:-}" ] && [ -n "$detected_ip" ] &&
+    [ "$ANSWER_SERVER_IP" != "$detected_ip" ]; then
+    msg "L'adresse IP de ce serveur a changé : $ANSWER_SERVER_IP → $detected_ip.\nLa nouvelle adresse est proposée ; pense à la réserver sur ta box (bail DHCP fixe)\npuis à reflasher les contrôleurs ESP32 depuis l'appli."
+    default_ip="$detected_ip"
+  fi
   ask SERVER_IP "Adresse IP de ce serveur sur ton réseau (les ESP32 s'y connectent).\nElle doit rester fixe (réservation DHCP sur ta box)." \
-    "${ANSWER_SERVER_IP:-$detected_ip}" valid_ipv4
+    "$default_ip" valid_ipv4
 
   if selected https; then
     ask DOMAIN "Nom de domaine qui pointe vers ce serveur (ports 80 et 443 ouverts vers lui)" "${ANSWER_DOMAIN:-}" valid_domain
@@ -760,6 +770,40 @@ latest_version() {
   echo "${v:-inconnue (pas d’accès à Internet ?)}"
 }
 
+# Adresse IP actuelle de la machine (même méthode que l'installation)
+detect_ip() {
+  local found=""
+  command -v ip >/dev/null 2>&1 &&
+    found=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit }}' || true)
+  [ -z "$found" ] && found=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
+  printf '%s' "$found"
+}
+
+# Avertit si l'IP de la machine n'est plus celle de l'installation (bail DHCP changé)
+check_ip() {
+  local installed current
+  installed="$(sed -n 's/^ANSWER_SERVER_IP=//p' aquasmanager.conf 2>/dev/null | tr -d "'\"")"
+  current="$(detect_ip)"
+  [ -n "$installed" ] && [ -n "$current" ] && [ "$installed" != "$current" ] || return 0
+  cat >&2 <<WARN
+
+! L'adresse IP de cette machine a changé : $installed → $current.
+  L'interface ($(public_url)) et les contrôleurs ESP32 cherchent encore l'ancienne adresse.
+  Le plus simple : réserver $installed pour cette machine sur ta box (bail DHCP fixe), puis redémarrer.
+  Sinon : « sudo aquasmanager reconfigure » (nouvelle adresse proposée), puis reflasher les contrôleurs.
+WARN
+}
+
+# Réécrit cette commande depuis la dernière version de l'installateur (nouvelles commandes)
+refresh_cli() {
+  local tmp
+  tmp="$(mktemp)"
+  if curl -fsSL --max-time 20 "$INSTALLER_URL" -o "$tmp" && bash "$tmp" --dir "$DIR" --cli-only >/dev/null 2>&1; then
+    echo "Commande « aquasmanager » à jour."
+  fi
+  rm -f "$tmp"
+}
+
 backup() {
   echo "Sauvegarde (contenu et destination réglés dans l'appli)..."
   compose exec -T api python -c "from services.backup import create_backup; print(create_backup('manual'))" |
@@ -771,6 +815,14 @@ case "${1:-help}" in
     compose ps
     echo
     echo "Interface : $(public_url)"
+    check_ip
+    ;;
+  reset-password)
+    need_root reset-password
+    shift
+    account="${1:-}"
+    case "$account" in "" | -*) account="$(sed -n 's/^ANSWER_ADMIN_USER=//p' aquasmanager.conf 2>/dev/null | tr -d "'\"")" ;; *) shift ;; esac
+    compose exec -T api python reset_password.py "${account:-admin}" "$@"
     ;;
   logs) shift; compose logs -f --tail=200 "$@" ;;
   start | stop | restart) need_root "$1"; compose "$1" ;;
@@ -805,6 +857,7 @@ case "${1:-help}" in
     compose pull
     compose up -d --remove-orphans
     docker image prune -f >/dev/null
+    refresh_cli
     echo "À jour : $(installed_version). Interface : $(public_url)"
     pinned="$(env_get AQUAS_API_IMAGE)"
     case "$pinned" in
@@ -840,12 +893,14 @@ case "${1:-help}" in
     cat <<HELP
 Utilisation : aquasmanager <commande>
 
-  status        état des services et adresse de l'interface
+  status        état des services, adresse de l'interface (avertit si l'IP a changé)
   logs [svc]    journaux en direct (api, ui, mosquitto...)
   version       version installée et dernière version publiée
   update [VER]  sauvegarde puis mise à jour (dernière version, ou VER : 1.0.1, latest...)
                 Revenir en arrière : update VER, puis restaurer la sauvegarde si besoin
   backup        sauvegarde immédiate (contenu et destination réglés dans l'appli)
+  reset-password [COMPTE] [-p MDP]
+                nouveau mot de passe (temporaire, sinon MDP) ; COMPTE : admin par défaut
   start|stop|restart
   reconfigure   relancer les questions de l'installation (réglages, composants)
   uninstall     désinstaller (les données peuvent être gardées)
@@ -856,7 +911,7 @@ EOF
   chmod 755 "$target"
   ok "Commande installée : $target"
 
-  if $DRY_RUN || ! command -v systemctl >/dev/null 2>&1; then
+  if $DRY_RUN || $CLI_ONLY || ! command -v systemctl >/dev/null 2>&1; then
     return 0
   fi
   # La sauvegarde automatique est faite par l'application (Configuration › Sauvegarde) :
@@ -962,7 +1017,22 @@ final_message() {
 
 # --- Déroulé ---------------------------------------------------------------------------
 
+# « aquasmanager update » : seule la commande est réécrite (et la copie locale du script)
+cli_only() {
+  [ -f "$DIR/.env" ] || die "Aucune installation dans $DIR."
+  $DRY_RUN || [ "$(id -u)" -eq 0 ] || die "Lance ce script avec sudo."
+  install_cli
+  if [ -f "${BASH_SOURCE[0]:-}" ] && [ "$(readlink -f "${BASH_SOURCE[0]}")" != "$(readlink -f "$DIR/install.sh" 2>/dev/null || true)" ]; then
+    cp "${BASH_SOURCE[0]}" "$DIR/install.sh"
+    chmod 755 "$DIR/install.sh"
+  fi
+}
+
 main() {
+  if $CLI_ONLY; then
+    cli_only
+    return 0
+  fi
   printf '%s\n  AquasManager — installation (%s)%s\n' "$C_BLUE" "$INSTALLER_VERSION" "$C_RESET"
   check_system
   if [ -f "$DIR/.env" ] && ! $RECONFIGURE && ! $ASSUME_YES; then

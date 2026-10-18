@@ -34,11 +34,12 @@ s'affichent en fenêtres (whiptail) ou en texte simple (`--plain`).
 ### Administration
 
 ```sh
-aquasmanager status          # état et adresse de l'interface
+aquasmanager status          # état, adresse de l'interface, IP changée
 aquasmanager version         # version installée et dernière version publiée
 sudo aquasmanager update     # sauvegarde puis mise à jour
 sudo aquasmanager update 1.0.1   # version précise (ou « latest » pour suivre les nouvelles versions)
 sudo aquasmanager backup     # sauvegarde (data/base/backups, 5 dernières gardées)
+sudo aquasmanager reset-password [compte]  # mot de passe oublié (admin par défaut)
 aquasmanager logs api        # journaux en direct
 sudo aquasmanager reconfigure  # changer les réglages ou les composants
 sudo aquasmanager uninstall  # désinstaller (les données peuvent être gardées)
