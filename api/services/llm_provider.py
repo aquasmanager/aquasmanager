@@ -97,26 +97,50 @@ def connection_from(conf: AssistantSettings, **override: Any) -> Connection:
     )
 
 
+# Messages montrés à l'utilisateur, par type d'erreur : jamais le texte brut renvoyé par le
+# service (il part seulement dans les journaux)
+LLM_MESSAGES = {
+    "auth": "Clé d'API refusée par le service.",
+    "not_found": "Adresse ou modèle introuvable sur le service (vérifie l'adresse et le nom du modèle).",
+    "rate_limit": "Le service limite les requêtes (quota ou crédit épuisé).",
+    "http": "Le service a renvoyé une erreur (détail dans les journaux de l'API).",
+    "timeout": "Le service n'a pas répondu à temps.",
+    "unreachable": "Service injoignable : vérifie l'adresse et que le serveur est démarré.",
+    "no_model": "Aucun modèle choisi dans les réglages de l'assistant.",
+    "unexpected": "Réponse inattendue du service.",
+}
+
+
 class LLMError(Exception):
-    """Erreur lisible par l'utilisateur (service injoignable, clé refusée...)."""
+    """Erreur du service de l'assistant ; kind désigne son message lisible (LLM_MESSAGES)."""
+
+    def __init__(self, kind: str):
+        super().__init__(LLM_MESSAGES.get(kind, LLM_MESSAGES["unexpected"]))
+        self.kind = kind
+
+
+def llm_message(exc: LLMError) -> str:
+    """Message à montrer pour une erreur de l'assistant (texte fixe selon son type)."""
+    return LLM_MESSAGES.get(exc.kind, LLM_MESSAGES["unexpected"])
 
 
 def _explain(exc: Exception) -> LLMError:
     if isinstance(exc, httpx.HTTPStatusError):
         code = exc.response.status_code
         if code in (401, 403):
-            return LLMError("Clé d'API refusée par le service.")
+            return LLMError("auth")
         if code == 404:
-            return LLMError("Adresse ou modèle introuvable sur le service (vérifie l'adresse et le nom du modèle).")
+            return LLMError("not_found")
         if code == 429:
-            return LLMError("Le service limite les requêtes (quota ou crédit épuisé).")
-        detail = exc.response.text[:200]
-        return LLMError(f"Le service a répondu {code} : {detail}")
+            return LLMError("rate_limit")
+        logger.warning("Assistant : le service a répondu %s : %s", code, exc.response.text[:500])
+        return LLMError("http")
     if isinstance(exc, httpx.TimeoutException):
-        return LLMError("Le service n'a pas répondu à temps.")
+        return LLMError("timeout")
     if isinstance(exc, httpx.RequestError):
-        return LLMError("Service injoignable : vérifie l'adresse et que le serveur est démarré.")
-    return LLMError("Réponse inattendue du service.")
+        return LLMError("unreachable")
+    logger.warning("Assistant : réponse inattendue du service : %r", exc)
+    return LLMError("unexpected")
 
 
 async def list_models(conn: Connection) -> list[str]:
@@ -139,7 +163,7 @@ async def chat(conn: Connection, messages: list[dict], tools: Optional[list[dict
     """Un tour de conversation ; renvoie le message de l'assistant au format OpenAI
     ({"role": "assistant", "content": ..., "tool_calls": [{"id", "function": {"name", "arguments"}}]})."""
     if not conn.model:
-        raise LLMError("Aucun modèle choisi dans les réglages de l'assistant.")
+        raise LLMError("no_model")
     try:
         async with httpx.AsyncClient(timeout=conn.timeout) as client:
             if conn.provider == "ollama":

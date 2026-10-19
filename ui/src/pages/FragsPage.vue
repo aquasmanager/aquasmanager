@@ -322,7 +322,7 @@
       <div class="text-right text-weight-bold">
         {{ t('frags.certificate.total', { n: certificateCount, total: formatPrice(certificateTotal) }, certificateCount) }}
       </div>
-      <LocationSelect v-model="certificateLocation" @loaded="restoreLastLocation" />
+      <LocationSelect v-model="saleLocation" @loaded="restoreLastLocation" />
       <DateInput v-model="certificateForm.transfer_date" :label="t('frags.certificate.date')" />
       <q-input v-model="certificateForm.notes" :label="t('frags.certificate.notes')" type="textarea" outlined dense autogrow />
     </FormDialog>
@@ -836,7 +836,7 @@ const selected = reactive(new Set<number>());
 const selectedFrags = computed(() => frags.value.filter((f) => selected.has(f.id)));
 const prices = ref<Record<number, number | null>>({});
 const quantities = ref<Record<number, number>>({});
-const certificateLocation = ref<LocationChoice>(null);
+const saleLocation = ref<LocationChoice>(null);
 
 // Dernier lieu utilisé sur cet appareil (toute une bourse sur le même lieu)
 const LAST_LOCATION_KEY = 'aquas.lastSaleLocation';
@@ -845,18 +845,20 @@ const knownLocations = ref<SaleLocation[]>([]);
 
 function restoreLastLocation(locations: SaleLocation[]) {
   knownLocations.value = locations;
-  if (certificateLocation.value !== null) return;
+  if (saleLocation.value !== null) return;
   try {
     const lastId = Number(localStorage.getItem(LAST_LOCATION_KEY));
-    if (locations.some((l) => l.id === lastId)) certificateLocation.value = lastId;
+    if (locations.some((l) => l.id === lastId)) saleLocation.value = lastId;
   } catch {
     // stockage local indisponible (navigation privée) : pas de lieu par défaut
   }
 }
 
 function rememberLocation(id: number | null) {
+  // Seul l'identifiant d'un lieu de vente connu est gardé sur l'appareil
+  const known = knownLocations.value.find((l) => l.id === id);
   try {
-    if (id) localStorage.setItem(LAST_LOCATION_KEY, String(id));
+    if (known) localStorage.setItem(LAST_LOCATION_KEY, String(known.id));
   } catch {
     // stockage local indisponible
   }
@@ -889,7 +891,7 @@ function toggle(frag: Frag) {
 async function openCertificate() {
   prices.value = Object.fromEntries(selectedFrags.value.map((f) => [f.id, f.price]));
   quantities.value = Object.fromEntries(selectedFrags.value.map((f) => [f.id, 1]));
-  certificateLocation.value = null;
+  saleLocation.value = null;
   certificateForm.value = { transfer_date: isoDate(), notes: '' };
   certificateDialog.value = true;
   try {
@@ -913,7 +915,7 @@ async function createCertificate() {
     })),
     transfer_date: certificateForm.value.transfer_date || null,
     notes: certificateForm.value.notes || null,
-    ...locationPayload(certificateLocation.value),
+    ...locationPayload(saleLocation.value),
   };
   // Hors connexion : vente préparée sur l'appareil, signée tout de suite
   if (!offline.online) {
@@ -943,7 +945,7 @@ async function createOfflineSale(payload: OfflineSalePayload) {
     $q.notify({ type: 'negative', message: t('frags.notify.offlineNoProfile') });
     return;
   }
-  const choice = certificateLocation.value;
+  const choice = saleLocation.value;
   const sale: OfflineSaleRecord = {
     id: newKey(),
     created_at: new Date().toISOString(),

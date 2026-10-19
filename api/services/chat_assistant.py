@@ -17,7 +17,7 @@ from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
-from services.llm_provider import LLMError, chat, connection_from, get_assistant_settings
+from services.llm_provider import LLMError, chat, connection_from, get_assistant_settings, llm_message
 from models.aquarium import Aquarium
 from models.water_parameter import WaterParameter
 from models.sensor import Sensor
@@ -334,7 +334,7 @@ async def ask_assistant(prompt: str, db: Session) -> str:
             message = await chat(conn, messages, tools)
         except LLMError as exc:
             logger.error("Assistant : %s", exc)
-            return f"L'assistant est indisponible : {exc}"
+            return f"L'assistant est indisponible : {llm_message(exc)}"
 
         tool_calls = message.get("tool_calls")
         if not tool_calls:

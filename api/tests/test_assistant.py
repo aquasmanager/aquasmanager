@@ -99,3 +99,20 @@ def test_licenses_inventory(api):
     assert names["pymysql"]["license"] == "MIT"
     assert names["zeroconf"]["note"] and names["fastapi"]["note"] is None
     assert any(c["name"] == "ESPHome" and "GPL-3.0" in c["license"] for c in data["external"])
+
+
+def test_assistant_errors_never_echo_service_body(api, monkeypatch):
+    """Les erreurs du service ne renvoient qu'un message fixe : jamais son texte brut."""
+    def handler(request: httpx.Request):
+        if request.url.path.endswith("/models"):
+            return httpx.Response(500, text="Traceback interne : clé sk-secret-123")
+        return httpx.Response(401, json={"error": "invalid key"})
+
+    _fake_llm(monkeypatch, handler)
+    api.put("/assistant/settings", {"provider": "openai", "base_url": "http://192.168.1.20:8000/v1", "model": "m",
+                                    "api_key": "", "enabled": True, "data_access": False})
+    models = api.post("/assistant/models", {}, code=502)
+    assert "sk-secret" not in models["detail"] and "journaux" in models["detail"]
+    ko = api.post("/assistant/test", {})
+    assert ko == {"ok": False, "message": "Clé d'API refusée par le service.", "seconds": ko.get("seconds")}
+    api.put("/assistant/settings", {"enabled": False})

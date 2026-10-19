@@ -24,6 +24,7 @@ from schemas.assistant import (
 )
 from services.llm_provider import (
     LLMError,
+    llm_message,
     chat,
     connection_from,
     encrypt_key,
@@ -88,7 +89,7 @@ async def available_models(probe: AssistantProbe, db: Session = Depends(get_db))
     try:
         return {"models": await list_models(conn)}
     except LLMError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(status_code=502, detail=llm_message(exc)) from exc
 
 
 @router.post("/test", response_model=AssistantTestResult, dependencies=ADMIN)
@@ -98,7 +99,7 @@ async def test_connection(probe: AssistantProbe, db: Session = Depends(get_db)):
     try:
         message = await chat(conn, [{"role": "user", "content": "Réponds seulement : OK"}], None)
     except LLMError as exc:
-        return {"ok": False, "message": str(exc)}
+        return {"ok": False, "message": llm_message(exc)}
     reply = (message.get("content") or "").strip()
     return {
         "ok": True,
